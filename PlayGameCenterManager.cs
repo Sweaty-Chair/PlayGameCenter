@@ -27,7 +27,7 @@ namespace SweatyChair
 
 		public bool debugMode = false;
 
-		protected virtual void Awake()
+		new protected virtual void Awake()
 		{
 			base.Awake();
 
@@ -65,6 +65,15 @@ namespace SweatyChair
 		}
 
 		#region Authentication
+
+		public static bool IsSingedIn()
+		{
+			#if UNITY_IOS
+			return GameCenterBinding.isPlayerAuthenticated();
+			#elif UNITY_ANDROID
+			return PlayGameServices.isSignedIn();
+			#endif
+		}
 
 		private static bool _isForcingAuthentication = false;
 
@@ -160,8 +169,9 @@ namespace SweatyChair
 			return GameCenterBinding.playerIdentifier();
 			#elif UNITY_ANDROID && !CHS
 			return PlayGameServices.getLocalPlayerInfo().playerId;
-			#endif
+			#else
 			return string.Empty;
+			#endif
 		}
 
 		public static string GetPlayerName()
@@ -170,21 +180,22 @@ namespace SweatyChair
 			return GameCenterBinding.playerAlias();
 			#elif UNITY_ANDROID && !CHS
 			return PlayGameServices.getLocalPlayerInfo().name;
-			#endif
+			#else
 			return string.Empty;
+			#endif
 		}
 
-		#region Show Game Center / Play Games UI
+#region Show Game Center / Play Games UI
 
 		// Show a custom notification banner, iOS only
 		public static void ShowCustomNotificationBanner(string title, string message, float duration)
 		{
-			#if UNITY_IOS || UNITY_TVOS
+#if UNITY_IOS || UNITY_TVOS
 			GameCenterBinding.showCustomNotificationBanner(title, message, duration);
-			#endif
+#endif
 		}
 
-		#endregion
+#endregion
 
 	}
 

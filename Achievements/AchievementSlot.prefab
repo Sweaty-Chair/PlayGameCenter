@@ -51,10 +51,7 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 4000012538646306}
-  - component: {fileID: 114000013942287806}
-  - component: {fileID: 114000013037340158}
   - component: {fileID: 65000012628803606}
-  - component: {fileID: 114000013539443766}
   m_Layer: 5
   m_Name: AchievementSlot
   m_TagString: Untagged
@@ -102,9 +99,9 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 4000010521512156}
-  - component: {fileID: 114000011933584816}
   - component: {fileID: 65000013851744608}
   - component: {fileID: 114000011244278692}
+  - component: {fileID: 114000011933584816}
   - component: {fileID: 114982031590509320}
   m_Layer: 5
   m_Name: ClaimButton
@@ -121,8 +118,8 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 4000012528259810}
-  - component: {fileID: 114000012039302022}
   - component: {fileID: 114406039469790190}
+  - component: {fileID: 114000012039302022}
   m_Layer: 5
   m_Name: CompleteLabel
   m_TagString: Untagged
@@ -170,8 +167,8 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 4000011666891310}
-  - component: {fileID: 114506514869101186}
   - component: {fileID: 114005849454892686}
+  - component: {fileID: 114506514869101186}
   m_Layer: 5
   m_Name: Rewards
   m_TagString: Untagged
@@ -218,8 +215,8 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 4000013125009500}
-  - component: {fileID: 114000013506639342}
   - component: {fileID: 114468909260247948}
+  - component: {fileID: 114000013506639342}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -267,8 +264,8 @@ GameObject:
   m_Component:
   - component: {fileID: 4424883651458960}
   - component: {fileID: 114143372337187798}
-  - component: {fileID: 114700142309198860}
   - component: {fileID: 114384484662318498}
+  - component: {fileID: 114700142309198860}
   m_Layer: 5
   m_Name: Value
   m_TagString: Untagged
@@ -378,9 +375,9 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 4630272570884884}
-  - component: {fileID: 114536095204171566}
   - component: {fileID: 114223283426461694}
   - component: {fileID: 114429793386124940}
+  - component: {fileID: 114536095204171566}
   m_Layer: 5
   m_Name: Value
   m_TagString: Untagged
@@ -789,7 +786,7 @@ MonoBehaviour:
   mFillCenter: 1
 --- !u!114 &114000011244278692
 MonoBehaviour:
-  m_ObjectHideFlags: 1
+  m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1000011112528966}
@@ -805,7 +802,7 @@ MonoBehaviour:
   onSelect: []
   onDeselect: []
   onClick:
-  - mTarget: {fileID: 114000013942287806}
+  - mTarget: {fileID: 0}
     mMethodName: OnRewardClick
     mParameters: []
     oneShot: 0
@@ -817,7 +814,7 @@ MonoBehaviour:
   onDrag: []
 --- !u!114 &114000011458418948
 MonoBehaviour:
-  m_ObjectHideFlags: 1
+  m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1000011412602764}
@@ -939,7 +936,7 @@ MonoBehaviour:
   mFillCenter: 1
 --- !u!114 &114000011933584816
 MonoBehaviour:
-  m_ObjectHideFlags: 1
+  m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1000011112528966}
@@ -993,7 +990,7 @@ MonoBehaviour:
   mFillCenter: 1
 --- !u!114 &114000012039302022
 MonoBehaviour:
-  m_ObjectHideFlags: 1
+  m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1000011177718460}
@@ -1181,60 +1178,6 @@ MonoBehaviour:
   mAtlas: {fileID: 11400000, guid: 62adb30369acbf943a67cee0f69267a3, type: 2}
   mSpriteName: tank_100px
   mFillCenter: 1
---- !u!114 &114000013037340158
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1000010319233336}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1b3dc54f924693f41b5cbecb267e647a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  leftAnchor:
-    target: {fileID: 0}
-    relative: 0
-    absolute: 0
-  rightAnchor:
-    target: {fileID: 0}
-    relative: 1
-    absolute: 0
-  bottomAnchor:
-    target: {fileID: 0}
-    relative: 0
-    absolute: 0
-  topAnchor:
-    target: {fileID: 0}
-    relative: 1
-    absolute: 0
-  updateAnchors: 1
-  mColor: {r: 1, g: 1, b: 1, a: 1}
-  mPivot: 4
-  mWidth: 677
-  mHeight: 180
-  mDepth: 5
-  mMat: {fileID: 0}
-  autoResizeBoxCollider: 0
-  hideIfOffScreen: 0
-  keepAspectRatio: 0
-  aspectRatio: 3.761111
-  mType: 1
-  mFillDirection: 4
-  mFillAmount: 1
-  mInvert: 0
-  mFlip: 0
-  mApplyGradient: 0
-  mGradientTop: {r: 1, g: 1, b: 1, a: 1}
-  mGradientBottom: {r: 0.7, g: 0.7, b: 0.7, a: 1}
-  centerType: 1
-  leftType: 1
-  rightType: 1
-  bottomType: 1
-  topType: 1
-  mAtlas: {fileID: 11400000, guid: 62adb30369acbf943a67cee0f69267a3, type: 2}
-  mSpriteName: Window
-  mFillCenter: 1
 --- !u!114 &114000013506639342
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1303,22 +1246,9 @@ MonoBehaviour:
   mMaxLineHeight: 0
   mLineWidth: 0
   mMultiline: 1
---- !u!114 &114000013539443766
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1000010319233336}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f02842fa4878db54f9587ff4de7d9f2d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  scrollView: {fileID: 0}
-  draggablePanel: {fileID: 0}
 --- !u!114 &114000013853572174
 MonoBehaviour:
-  m_ObjectHideFlags: 1
+  m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1000010020740456}
@@ -1384,34 +1314,6 @@ MonoBehaviour:
   mMaxLineHeight: 0
   mLineWidth: 0
   mMultiline: 1
---- !u!114 &114000013942287806
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1000010319233336}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9bc3c0b71fb78a544b97f0a9a9fee98a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _panelGO: {fileID: 0}
-  _hasAndroidBackClick: 0
-  _starSprites:
-  - {fileID: 114679570840364062}
-  - {fileID: 114454333944034668}
-  - {fileID: 114000012482498880}
-  _nameLabel: {fileID: 114000011458418948}
-  _descriptionLabel: {fileID: 114000013853572174}
-  _rewardItemLabels:
-  - {fileID: 114429793386124940}
-  - {fileID: 114384484662318498}
-  _rewardsGO: {fileID: 1000011733287544}
-  _progressGO: {fileID: 1000011866897550}
-  _collectButtonGO: {fileID: 1000011112528966}
-  _completeGO: {fileID: 1000011177718460}
-  _progressLabel: {fileID: 114000012174248764}
-  _progressBar: {fileID: 114634621994145340}
 --- !u!114 &114005849454892686
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1427,16 +1329,16 @@ MonoBehaviour:
   mTermSecondary: 
   PrimaryTermModifier: 0
   SecondaryTermModifier: 0
+  TermPrefix: 
+  TermSuffix: 
   LocalizeOnAwake: 1
-  Source: {fileID: 114231216096503466, guid: 22de9d25996b94cf1a3321834a7df28b, type: 2}
+  Source: {fileID: 0}
   mTarget: {fileID: 114506514869101186}
-  CanUseSecondaryTerm: 1
-  AllowMainTermToBeRTL: 1
-  AllowSecondTermToBeRTL: 0
   IgnoreRTL: 0
   MaxCharactersInRTL: 0
   IgnoreNumbersInRTL: 0
   CorrectAlignmentForRTL: 1
+  AddSpacesToJoinedLanguages: 0
   TranslatedObjects: []
   LocalizeCallBack:
     Target: {fileID: 0}
@@ -1447,7 +1349,7 @@ MonoBehaviour:
   mGUI_ShowCallback: 0
 --- !u!114 &114031690861358924
 MonoBehaviour:
-  m_ObjectHideFlags: 1
+  m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1469477597951698}
@@ -1608,16 +1510,16 @@ MonoBehaviour:
   mTermSecondary: 
   PrimaryTermModifier: 0
   SecondaryTermModifier: 0
+  TermPrefix: 
+  TermSuffix: 
   LocalizeOnAwake: 1
-  Source: {fileID: 114231216096503466, guid: 22de9d25996b94cf1a3321834a7df28b, type: 2}
+  Source: {fileID: 0}
   mTarget: {fileID: 114000012039302022}
-  CanUseSecondaryTerm: 1
-  AllowMainTermToBeRTL: 1
-  AllowSecondTermToBeRTL: 0
   IgnoreRTL: 0
   MaxCharactersInRTL: 0
   IgnoreNumbersInRTL: 0
   CorrectAlignmentForRTL: 1
+  AddSpacesToJoinedLanguages: 0
   TranslatedObjects: []
   LocalizeCallBack:
     Target: {fileID: 0}
@@ -1707,16 +1609,16 @@ MonoBehaviour:
   mTermSecondary: 
   PrimaryTermModifier: 0
   SecondaryTermModifier: 0
+  TermPrefix: 
+  TermSuffix: 
   LocalizeOnAwake: 1
-  Source: {fileID: 114231216096503466, guid: 22de9d25996b94cf1a3321834a7df28b, type: 2}
+  Source: {fileID: 0}
   mTarget: {fileID: 114000013506639342}
-  CanUseSecondaryTerm: 1
-  AllowMainTermToBeRTL: 1
-  AllowSecondTermToBeRTL: 0
   IgnoreRTL: 0
   MaxCharactersInRTL: 0
   IgnoreNumbersInRTL: 0
   CorrectAlignmentForRTL: 1
+  AddSpacesToJoinedLanguages: 0
   TranslatedObjects: []
   LocalizeCallBack:
     Target: {fileID: 0}
@@ -1727,7 +1629,7 @@ MonoBehaviour:
   mGUI_ShowCallback: 0
 --- !u!114 &114506514869101186
 MonoBehaviour:
-  m_ObjectHideFlags: 1
+  m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1000011733287544}
@@ -2057,7 +1959,7 @@ MonoBehaviour:
   mFillCenter: 1
 --- !u!114 &114982031590509320
 MonoBehaviour:
-  m_ObjectHideFlags: 1
+  m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1000011112528966}

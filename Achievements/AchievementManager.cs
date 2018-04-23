@@ -5,10 +5,6 @@ using System.Collections;
 using System.Collections.Generic;
 using Prime31;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace SweatyChair
 {
 
@@ -16,9 +12,10 @@ namespace SweatyChair
 	{
 
 		public static event UnityAction<bool> uiToggledEvent;
-		public static event UnityAction<AchievementInfo> achievementChangedEvent;
+		public static event UnityAction<AchievementGroupInfo> achievementChangedEvent;
 
-		public AchievementInfo[] achievementInfos;
+		[UnityEngine.Serialization.FormerlySerializedAs("achievementInfos")]
+		public AchievementGroupInfo[] achievementGroupInfos;
 
 		// Load online and update achievements progress to local, only used if achievement prgress is not saved in GameSave
 		public bool loadAchievementsOnStart = true;
@@ -41,9 +38,9 @@ namespace SweatyChair
 
 		public static bool hasReward {
 			get {
-				if (s_Instance == null)
+				if (!s_InstanceExists)
 					return false;
-				foreach (AchievementInfo ai in s_Instance.achievementInfos) {
+				foreach (AchievementGroupInfo ai in s_Instance.achievementGroupInfos) {
 					if (ai.hasReward)
 						return true;
 				}
@@ -51,7 +48,7 @@ namespace SweatyChair
 			}
 		}
 
-		public static void OnAchievementChanged(AchievementInfo achievementInfo)
+		public static void OnAchievementChanged(AchievementGroupInfo achievementInfo)
 		{
 			if (achievementChangedEvent != null)
 				achievementChangedEvent(achievementInfo);
@@ -65,11 +62,27 @@ namespace SweatyChair
 			#endif
 		}
 
-		public static AchievementInfo[] GetInfos()
+		/// <summary>
+		/// Gets the achievement group infos.
+		/// </summary>
+		public static AchievementGroupInfo[] GetGroupInfos()
 		{
-			if (s_InstanceExists)
-				return s_Instance.achievementInfos;
-			return new AchievementInfo[0];
+			if (!s_InstanceExists)
+				return new AchievementGroupInfo[0];
+			return s_Instance.achievementGroupInfos;
+		}
+
+		/// <summary>
+		/// Gets the ongoing achievement infos, ongoing means the most highest achievments which not yea completed or rewarded, for each achievement group.
+		/// </summary>
+		public static AchievementInfo[] GetOngoingInfos()
+		{
+			if (!s_InstanceExists)
+				return new AchievementInfo[0];
+			AchievementInfo[] results = new AchievementInfo[s_Instance.achievementGroupInfos.Length];
+			for (int i = 0, imax = s_Instance.achievementGroupInfos.Length; i < imax; i++)
+				results[i] = s_Instance.achievementGroupInfos[i].GetOngoingInfo();
+			return results;
 		}
 
 		public static void Report(Achievement achievement, int totalOrIncrement = 1)
@@ -82,42 +95,47 @@ namespace SweatyChair
 			if (s_Instance.debugMode)
 				Debug.LogFormat("AchievementManager:Report({0},{1})", achievement, totalOrIncrement);
 
-			AchievementInfo ai = GetAchievementInfo(achievement);
-			if (ai == null)
+			AchievementGroupInfo groupInfo = GetGroupInfo(achievement);
+			if (groupInfo == null)
 				return;
 
 			// If not an incremental achievement and not total change, just return
-			if (!ai.isIncrement && ai.currentCompleted == totalOrIncrement)
+			if (!groupInfo.isIncrement && groupInfo.currentCompleted == totalOrIncrement)
 				return;
 
-			ai.AddOrSetCompleted(totalOrIncrement);
+			groupInfo.AddOrSetCurrentCompleted(totalOrIncrement);
 
-			OnAchievementChanged(ai);
+			OnAchievementChanged(groupInfo);
 
 			// Report to GameCenter/PlayGames
 			if (!PlayGameCenterManager.isAuthenticated)
 				return;
 		
 			#if UNITY_IOS || UNITY_TVOS
-			for (int i = 0, imax = ai.requirements.Length; i < imax; i++) {
+
+			for (int i = 0, imax = groupInfo.achievementInfos.Length; i < imax; i++) {
 				if (s_Instance.debugMode)
-					Debug.LogFormat("AchievementManager:Report - currentCompleted={0}, requirements={1}", ai.currentCompleted, ai.requirements[i]);
-				GameCenterBinding.reportAchievement(ai.iOSIds[i], Mathf.Min(100f * ai.currentCompleted / ai.requirements[i], 100));
+					Debug.LogFormat("AchievementManager:Report - currentCompleted={0}, requirements={1}", groupInfo.currentCompleted, groupInfo.achievementInfos[i].requirement);
+				GameCenterBinding.reportAchievement(groupInfo.achievementInfos[i].iOSId, Mathf.Min(100f * groupInfo.currentCompleted / groupInfo.achievementInfos[i].requirement, 100));
 			}
+
 			#elif UNITY_ANDROID && !CHS
-			for (int i = 0, imax = ai.requirements.Length; i < imax; i++) {
+
+			for (int i = 0, imax = groupInfo.achievementInfos.Length; i < imax; i++) {
+				AchievementInfo info = groupInfo.achievementInfos[i];
 				if (s_Instance.debugMode)
-					Debug.LogFormat("AchievementManager:Report - ai.isIncrement={0}, ai.requirements[i]={1}, ai.androidIds[i]={2}", ai.isIncrement, ai.requirements[i], ai.androidIds[i]);
-				if (ai.isIncrement) { // Increment achievement
-					if (ai.requirements[i] == 1) // Unlock directly if requirement is simply 1
-						PlayGameServices.unlockAchievement(ai.androidIds[i]);
+					Debug.LogFormat("AchievementManager:Report - groupInfo.isIncrement={0}, info.requirement={1}, info.androidId={2}", groupInfo.isIncrement, info.requirement, info.androidId);
+				if (groupInfo.isIncrement) { // Increment achievement
+					if (info.requirement == 1) // Unlock directly if requirement is simply 1
+						PlayGameServices.unlockAchievement(info.androidId);
 					else // Increment the achievement by 1
-						PlayGameServices.incrementAchievement(ai.androidIds[i], totalOrIncrement);
+						PlayGameServices.incrementAchievement(info.androidId, totalOrIncrement);
 				} else { // Simple achievement
-					if (ai.currentCompleted >= ai.requirements[i])
-						PlayGameServices.unlockAchievement(ai.androidIds[i]);
+					if (groupInfo.currentCompleted >= info.requirement)
+						PlayGameServices.unlockAchievement(info.androidId);
 				}
 			}
+
 			#endif
 		}
 
@@ -126,18 +144,18 @@ namespace SweatyChair
 		private static void OnAchievementsLoaded(List<GameCenterAchievement> achievements)
 		{
 			if (s_InstanceExists && s_Instance.debugMode) {
-				Debug.LogFormat("AchievementManager:OnAchievementsLoaded - achievements.Count={0}:", achievements.Count);
+				Debug.LogFormat("AchievementManager:OnAchievementsLoaded - achievements.Count={0}", achievements.Count);
 				DebugUtils.Log(achievements);
 			}
 
 			// Sync online achievement progress to local (new install but old progress)
 			foreach (GameCenterAchievement achievement in achievements) {
-				foreach (AchievementInfo ai in s_Instance.achievementInfos) {
+				foreach (AchievementGroupInfo ai in s_Instance.achievementGroupInfos) {
 				
-					for (int i = 0, imax = ai.requirements.Length; i < imax; i++) { // Loop throught all achievements pre-set
-						if (achievement.identifier == ai.iOSIds[i]) {
+					for (int i = 0, imax = ai.achievementInfos.Length; i < imax; i++) { // Loop throught all achievements pre-set
+						if (achievement.identifier == ai.achievementInfos[i].iOSId) {
 
-							int achievementCurrentCompleted = Mathf.RoundToInt(achievement.percentComplete / 100 * ai.requirements[i]);
+							int achievementCurrentCompleted = Mathf.RoundToInt(achievement.percentComplete / 100 * ai.achievementInfos[i].requirement);
 
 							if (ai.currentCompleted < achievementCurrentCompleted - 2) // Allow 2 to be rounding error
 							ai.currentCompleted = achievementCurrentCompleted;
@@ -169,21 +187,23 @@ namespace SweatyChair
 
 			// Sync online achievement progress to local (new install but old progress), or local to online (offline progress)
 			foreach (GPGAchievementMetadata achievementMetadata in achievementMetadatas) {
-				foreach (AchievementInfo ai in s_Instance.achievementInfos) {
-					for (int i = 0, imax = ai.requirements.Length; i < imax; i++) { // Loop throught all achievements pre-set
+				foreach (AchievementGroupInfo groupInfo in s_Instance.achievementGroupInfos) {
+					for (int i = 0, imax = groupInfo.achievementInfos.Length; i < imax; i++) { // Loop throught all achievements pre-set
 						
-						if (achievementMetadata.achievementId == ai.androidIds[i]) {
-							if (ai.isIncrement) { // Increment achievement
+						AchievementInfo info = groupInfo.achievementInfos[i];
+					
+						if (achievementMetadata.achievementId == info.androidId) {
+							if (groupInfo.isIncrement) { // Increment achievement
 
-								if (ai.currentCompleted > achievementMetadata.completedSteps)
-									PlayGameServices.incrementAchievement(ai.androidIds[i], ai.currentCompleted - achievementMetadata.completedSteps);
-								else if (ai.currentCompleted < achievementMetadata.completedSteps)
-									ai.currentCompleted = achievementMetadata.completedSteps;
+								if (groupInfo.currentCompleted > achievementMetadata.completedSteps)
+									PlayGameServices.incrementAchievement(info.androidId, groupInfo.currentCompleted - achievementMetadata.completedSteps);
+								else if (groupInfo.currentCompleted < achievementMetadata.completedSteps)
+									groupInfo.currentCompleted = achievementMetadata.completedSteps;
 
 							} else { // Simple achievement
 
-								if (ai.currentCompleted > ai.requirements[i]) // Unlock if cached high score larger than the requirement
-									PlayGameServices.unlockAchievement(ai.androidIds[i]);
+								if (groupInfo.currentCompleted > info.requirement) // Unlock if cached high score larger than the requirement
+									PlayGameServices.unlockAchievement(info.androidId);
 
 							}
 						}
@@ -194,27 +214,27 @@ namespace SweatyChair
 
 		#endif
 
-		public static AchievementInfo GetAchievementInfo(int index)
+		public static AchievementGroupInfo GetGroupInfo(int index)
 		{
-			return GetAchievementInfo((Achievement)index);
+			return GetGroupInfo((Achievement)index);
 		}
 
-		public static AchievementInfo GetAchievementInfo(Achievement achievement)
+		public static AchievementGroupInfo GetGroupInfo(Achievement achievement)
 		{
-			if (s_Instance == null)
+			if (!s_InstanceExists)
 				return null;
 
 			int index = (int)achievement;
 
-			if (index >= s_Instance.achievementInfos.Length) {
+			if (index >= s_Instance.achievementGroupInfos.Length) {
 				Debug.LogFormat("AchievementManager:GetAchievementInfo - Invalid achievement={0}", achievement);
 				return null;
 			}
 
-			if (s_Instance.achievementInfos[index].id != achievement)
+			if (s_Instance.achievementGroupInfos[index].id != achievement)
 				Debug.LogWarningFormat("AchievementManager:GetAchievementInfo - The {0}-th _achievementInfo.id != {1}", index, achievement);
 
-			return s_Instance.achievementInfos[index];
+			return s_Instance.achievementGroupInfos[index];
 		}
 
 		public static void ToggleUI(bool doShow = true)
@@ -235,18 +255,18 @@ namespace SweatyChair
 		}
 
 		#if UNITY_EDITOR
-
-		[ContextMenu("Print Achievement Infos")]
-		private void PrintAchievementInfos()
-		{
-			DebugUtils.LogEach(achievementInfos, "achievementInfos");
-		}
-
-		[MenuItem("Debug/Achievements/Print Achievement Infos")]
+		
+		[UnityEditor.MenuItem("Debug/Achievements/Print Achievement Infos")]
 		private static void DebugPrintAchievementInfos()
 		{
 			if (DebugUtils.CheckPlaying() && s_InstanceExists)
 				s_Instance.PrintAchievementInfos();
+		}
+
+		[ContextMenu("Print Achievement Infos")]
+		private void PrintAchievementInfos()
+		{
+			DebugUtils.LogEach(achievementGroupInfos, "achievementInfos");
 		}
 
 		#endif

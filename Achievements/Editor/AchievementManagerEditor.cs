@@ -1,10 +1,8 @@
-﻿using UnityEngine;
-using UnityEditor;
+﻿using SweatyChair;
 using System;
-using System.IO;
-using System.Collections;
 using System.Collections.Generic;
-using SweatyChair;
+using UnityEditor;
+using UnityEngine;
 
 [CustomEditor(typeof(AchievementManager))]
 public class AchievementManagerEditor : Editor
@@ -18,7 +16,7 @@ public class AchievementManagerEditor : Editor
 	private static bool _isCompiling = false;
 
 	private bool _confirmDelete = false;
-	private bool[] _showSubAchievements;
+	private bool[] _showAchievements;
 
 	private AchievementManager _am {
 		get { return target as AchievementManager; }
@@ -91,7 +89,7 @@ public class AchievementManagerEditor : Editor
 		if (GUILayout.Button("New Achievement")) {
 
 			int lastIdIndex = EnumUtils.GetCount<Achievement>() - 1;
-			string newIdStr = lastIdIndex >= 0 ? ((Achievement)lastIdIndex).ToString() + "Clone" : "New Achievement";
+			string newIdStr = lastIdIndex >= 0 ? ((Achievement)lastIdIndex).ToString() + "_Clone" : "New Achievement";
 			AddAchievementId(newIdStr);
 
 		}
@@ -137,136 +135,171 @@ public class AchievementManagerEditor : Editor
 
 		EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
 
+		// Achievement Group Info
+
 		// ID - use SetNextControlName to avoid it keep update and write to script everytime a key is pressed
 		GUI.SetNextControlName("ID");
 
 		if (string.IsNullOrEmpty(_updatedAchievement) && !string.IsNullOrEmpty(_curAchievement.ToString()))
 			_updatedAchievement = _curAchievement.ToString();
 
-		_updatedAchievement = EditorGUILayout.TextField("ID", _updatedAchievement);
+		_updatedAchievement = EditorGUILayout.TextField(new GUIContent("ID", "Used to call get the achievement info and report the achievement."), _updatedAchievement);
 
 		if (GUI.GetNameOfFocusedControl() == "ID" && Event.current.isKey && Event.current.keyCode == KeyCode.Return) {
-			if (_updatedAchievement != _curAchievement.ToString())
+			if (_updatedAchievement != _curAchievement.ToString() && !AchievementIdExists(_updatedAchievement))
 				ReplaceAchievementId(_curAchievement.ToString(), _updatedAchievement);
 		}
-
-		if (_updatedAchievement != _curAchievement.ToString())
-			EditorGUILayout.HelpBox("Press Enter to Apply", MessageType.Warning);
+		
+		if (_updatedAchievement != _curAchievement.ToString()) {
+			if (AchievementIdExists(_updatedAchievement))
+				EditorGUILayout.HelpBox("Achievement already exists", MessageType.Error);
+			else
+				EditorGUILayout.HelpBox("Press Enter to Apply", MessageType.Warning);
+		}
 
 		// Check the length of achievements is valid
-		if (_am.achievementInfos == null || _am.achievementInfos.Length <= _curIndex)
+		if (_am.achievementGroupInfos == null || _am.achievementGroupInfos.Length <= _curIndex)
 			ValidateAchievementInfos();
-		AchievementInfo ai = _am.achievementInfos[_curIndex];
+		AchievementGroupInfo groupInfo = _am.achievementGroupInfos[_curIndex];
 
-		// Name
-		string name = EditorGUILayout.TextField("Name", ai.name);
-		if (name != ai.name) {
-			Undo.RegisterUndo(_am, "Edit Name");
-			ai.name = name;
+		if (groupInfo.isInGame) {
+			
+			// Name
+			string name = EditorGUILayout.TextField(new GUIContent("Name", "Name of the achievement group, used for in-game UI only."), groupInfo.name);
+			if (name != groupInfo.name) {
+				Undo.RegisterCompleteObjectUndo(_am, "Edit Achievement Group Name");
+				groupInfo.name = name;
+			}
+			// Description
+			string description = EditorGUILayout.TextField(new GUIContent("Description", "Description of the achievement group, used for in-game UI only."), groupInfo.description);
+			if (description != groupInfo.description) {
+				Undo.RegisterCompleteObjectUndo(_am, "Edit Achievement Group Description");
+				groupInfo.description = description;
+			}
+
 		}
 
 		// Is incremental
-		bool isIncrement = EditorGUILayout.Toggle("Incremental", ai.isIncrement);
-		if (isIncrement != ai.isIncrement) {
-			Undo.RegisterUndo(_am, "Edit Incremental");
-			ai.isIncrement = isIncrement;
+		bool isIncrement = EditorGUILayout.Toggle(new GUIContent("Incremental", "If incremental, current count of the achievement is saved and increment number is input each time; Otherwise, the full count should be input."), groupInfo.isIncrement);
+		if (isIncrement != groupInfo.isIncrement) {
+			Undo.RegisterCompleteObjectUndo(_am, "Edit Achievement Group Is Incremental");
+			groupInfo.isIncrement = isIncrement;
 		}
 
 		// Has in-game rewards
-		bool hasInGameRewards = EditorGUILayout.Toggle("In-Game", ai.isInGame);
-		if (hasInGameRewards != ai.isInGame) {
-			Undo.RegisterUndo(_am, "Edit In-Game");
-			ai.isInGame = hasInGameRewards;
-			if (!hasInGameRewards) // Clear the rewards
-				ai.rewards = null;
-			else
-				ai.rewards = ai.rewards.Resize<Reward>(ai.requirements.Length);
-		}
-
-		if (ai.isInGame) {
-			string description = EditorGUILayout.TextField("Description", ai.description);
-			if (description != ai.description) {
-				Undo.RegisterUndo(_am, "Edit Description");
-				ai.description = description;
-			}
+		bool isInGame = EditorGUILayout.Toggle(new GUIContent("In-Game", "If this achievement is shown / can be rewarded in-game too, this will use GameSave for saving progress count; otherwise it use PlayerPrefs."), groupInfo.isInGame);
+		if (isInGame != groupInfo.isInGame) {
+			Undo.RegisterCompleteObjectUndo(_am, "Edit Achievement Group Is In-Game");
+			groupInfo.isInGame = isInGame;
 		}
 
 		// Total of sub-achivements
-		int subAchievementsCount = Mathf.Max(1, EditorGUILayout.IntField("Total Achievements", ai.requirements.Length)); // At least 1
-		if (subAchievementsCount != ai.requirements.Length) {
-			Undo.RegisterUndo(_am, "Edit Total Achievements");
-			Array.Resize<int>(ref ai.requirements, subAchievementsCount);
-			Array.Resize<string>(ref ai.iOSIds, subAchievementsCount);
-			Array.Resize<string>(ref ai.androidIds, subAchievementsCount);
-			if (hasInGameRewards)
-				ai.rewards = ai.rewards.Resize<Reward>(subAchievementsCount);
+		int subAchievementsCount = Mathf.Max(1, EditorGUILayout.IntField(new GUIContent("Total Achievements", "The total achievements of this achievement category."), groupInfo.achievementInfos.Length)); // At least 1
+		if (subAchievementsCount != groupInfo.achievementInfos.Length) {
+			Undo.RegisterCompleteObjectUndo(_am, "Edit Total Achievements");
+			Array.Resize<AchievementInfo>(ref groupInfo.achievementInfos, subAchievementsCount);
 		}
 
-		if (_showSubAchievements == null || _showSubAchievements.Length != subAchievementsCount)
-			_showSubAchievements = _showSubAchievements.Resize<bool>(subAchievementsCount, true);
+		if (_showAchievements == null || _showAchievements.Length != subAchievementsCount)
+			_showAchievements = _showAchievements.Resize<bool>(subAchievementsCount, true);
 
 		EditorGUI.indentLevel++;
 
-		// Achievements
-		for (int i = 0; i < ai.requirements.Length; i++) {
+		// Achievement Infos
+		for (int i = 0; i < groupInfo.achievementInfos.Length; i++) {
 
-			_showSubAchievements[i] = EditorGUILayout.Foldout(_showSubAchievements[i], string.Format("Achievement {0}", i + 1));
+			GUILayout.BeginHorizontal();
+			{
+				_showAchievements[i] = EditorGUILayout.Foldout(_showAchievements[i], string.Format("Achievement {0}", i + 1), true);
+				EditorGUI.BeginDisabledGroup(true);
+				if (groupInfo.IsCompleted(i))
+					EditorGUILayout.Toggle(true);
+				EditorGUI.EndDisabledGroup();
+			}
+			GUILayout.EndHorizontal();
 
-			if (_showSubAchievements[i]) {
+			if (_showAchievements[i]) {
 				
 				EditorGUI.indentLevel++;
 
+				AchievementInfo info = groupInfo.achievementInfos[i];
+
+				if (groupInfo.isInGame) {
+
+					// Name
+					string aName = EditorGUILayout.TextField(new GUIContent("Name", "Name of the achievement, used for in-game UI only."), info.name);
+					if (aName != info.name) {
+						Undo.RegisterCompleteObjectUndo(_am, "Edit Achievement Name");
+						groupInfo.achievementInfos[i].name = aName;
+					}
+
+					// Description
+					string aDescription = EditorGUILayout.TextField(new GUIContent("Description", "Description of the achievement, used for in-game UI only."), info.description);
+					if (aDescription != info.name) {
+						Undo.RegisterCompleteObjectUndo(_am, "Edit Achievement Description");
+						groupInfo.achievementInfos[i].description = aDescription;
+					}
+
+				}
+
 				// Requirement
-				int requirement = Mathf.Max(0, EditorGUILayout.IntField("Requirement", ai.requirements[i])); // At least 0
-				if (requirement != ai.requirements[i]) {
-					Undo.RegisterUndo(_am, "Edit Achievement Requirement");
-					ai.requirements[i] = requirement;
+				int requirement = Mathf.Max(0, EditorGUILayout.IntField(new GUIContent("Requirement", "Required count for completing this achievement."), info.requirement)); // At least 0
+				if (requirement != info.requirement) {
+					Undo.RegisterCompleteObjectUndo(_am, "Edit Achievement Requirement");
+					groupInfo.achievementInfos[i].requirement = requirement;
 				}
 
 				// iOS ID
-				string iOSId = EditorGUILayout.TextField("iOS ID", ai.iOSIds[i]);
-				if (iOSId != ai.iOSIds[i]) {
-					Undo.RegisterUndo(_am, "Edit Achievement iOS ID");
-					ai.iOSIds[i] = iOSId;
+				string iOSId = EditorGUILayout.TextField(new GUIContent("iOS ID", "Achievement ID setup in iTunesConnect console, format as: \"com.sweatychair.gamename.achievementname\"."), info.iOSId);
+				if (iOSId != info.iOSId) {
+					Undo.RegisterCompleteObjectUndo(_am, "Edit Achievement iOS ID");
+					groupInfo.achievementInfos[i].iOSId = iOSId;
 				}
 
 				// Android ID
-				string androidId = EditorGUILayout.TextField("Android ID", ai.androidIds[i]);
-				if (androidId != ai.androidIds[i]) {
-					Undo.RegisterUndo(_am, "Edit Achievement Android ID");
-					ai.androidIds[i] = androidId;
+				string androidId = EditorGUILayout.TextField(new GUIContent("Android ID", "Achievement ID setup in Play Games console, format as: \"CgkI9snButIFEAIQAw\"."), info.androidId);
+				if (androidId != info.androidId) {
+					Undo.RegisterCompleteObjectUndo(_am, "Edit Achievement Android ID");
+					groupInfo.achievementInfos[i].androidId = androidId;
 				}
 
-				if (ai.isInGame) {
+				if (groupInfo.isInGame) {
 
 					// Total rewards
-					int rewardCount = EditorGUILayout.IntField("Total Reward Items", ai.rewards[i].count);
-					if (rewardCount != ai.rewards[i].count) {
-						Undo.RegisterUndo(_am, "Edit Total Reward Items");
-						ai.rewards[i].count = rewardCount;
+					int rewardCount = EditorGUILayout.IntField(new GUIContent("Total Reward Items", "The rewarding item after completing it."), info.reward == null ? 0 : info.reward.count);
+					if (rewardCount != info.reward.count) {
+						Undo.RegisterCompleteObjectUndo(_am, "Edit Total Reward Items");
+						groupInfo.achievementInfos[i].reward.count = rewardCount;
 					}
 
 					EditorGUI.indentLevel++;
 
 					// Rewards
-					for (int j = 0; j < ai.rewards[i].count; j++) {
+					for (int j = 0; j < info.reward.count; j++) {
 
 						EditorGUILayout.LabelField(string.Format("Reward {0}", j + 1));
 
 						EditorGUI.indentLevel++;
 
 						// Rewards types
-						ItemType itemType = (ItemType)EditorGUILayout.EnumPopup("Types", ai.rewards[i].items[j].itemType);
-						if (itemType != ai.rewards[i].items[j].itemType) {
-							Undo.RegisterUndo(_am, "Edit Reward Types");
-							ai.rewards[i].items[j].SetItemType(itemType);
+						ItemType itemType = (ItemType)EditorGUILayout.EnumPopup(new GUIContent("Types", "Reward item type."), info.reward.items[j].itemType);
+						if (itemType != info.reward.items[j].itemType) {
+							Undo.RegisterCompleteObjectUndo(_am, "Edit Reward Types");
+							groupInfo.achievementInfos[i].reward.items[j].SetItemType(itemType);
 						}
 
 						// Rewards amount
-						int amount = EditorGUILayout.IntField("Amount", ai.rewards[i].items[j].amount);
-						if (amount != ai.rewards[i].items[j].amount) {
-							Undo.RegisterUndo(_am, "Edit Reward Amount");
-							ai.rewards[i].items[j].SetAmount(amount);
+						int amount = Mathf.Max(1, EditorGUILayout.IntField(new GUIContent("Amount", "Reward item amount."), info.reward.items[j].amount));
+						if (amount != info.reward.items[j].amount) {
+							Undo.RegisterCompleteObjectUndo(_am, "Edit Reward Amount");
+							groupInfo.achievementInfos[i].reward.items[j].SetAmount(amount);
+						}
+
+						// Rewards id
+						int id = EditorGUILayout.IntField(new GUIContent("ID", "Reward item id (Optional)."), info.reward.items[j].id);
+						if (id != info.reward.items[j].id) {
+							Undo.RegisterCompleteObjectUndo(_am, "Edit Reward ID");
+							groupInfo.achievementInfos[i].reward.items[j].SetId(id);
 						}
 
 						EditorGUI.indentLevel--;
@@ -284,7 +317,27 @@ public class AchievementManagerEditor : Editor
 
 		EditorGUI.indentLevel--;
 
-		EditorGUILayout.HelpBox(string.Format("AchievementManager.Report(Achievement.{0}, {1})", _curAchievement, ai.isIncrement ? "increment" : "total"), MessageType.Info);
+		EditorGUILayout.HelpBox(string.Format("AchievementManager.Report(Achievement.{0}, {1})", _curAchievement, groupInfo.isIncrement ? "increment" : "total"), MessageType.Info);
+
+		EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
+
+		// Debug Buttons
+		GUILayout.BeginHorizontal();
+		{
+			if (GUILayout.Button("Print Progress"))
+				Debug.Log(groupInfo.ToProgressString());
+			if (GUILayout.Button("Complete Next Achievement"))
+				groupInfo.CompleteNext();
+			if (GUILayout.Button("Reward Next Achievement")) {
+				if (Application.isPlaying)
+					groupInfo.RewardNext();
+				else
+					Debug.Log("Please run while game is playing.");
+			}
+			if (GUILayout.Button("Reset Progress"))
+				groupInfo.ResetProgress();
+		}
+		GUILayout.EndHorizontal();
 
 		EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
 
@@ -295,8 +348,24 @@ public class AchievementManagerEditor : Editor
 		GUI.backgroundColor = Color.white;
 	}
 
+	private bool AchievementIdExists(string idStr)
+	{
+		for (int i = 0, imax = EnumUtils.GetCount<Achievement>(); i < imax; i++)
+		{
+			if (((Achievement)i).ToString() == idStr)
+				return true;
+		}
+		return false;
+	}
+
 	private void AddAchievementId(string idStr)
 	{
+		if (AchievementIdExists(idStr))
+		{
+			Debug.LogErrorFormat("AchievementManagerEditor:AddAchievementId - AchievementId '{0}' already exists.", idStr);
+			return;
+		}
+
 		List<string> idStrs = new List<string>();
 		for (int i = 0, imax = EnumUtils.GetCount<Achievement>(); i < imax; i++)
 			idStrs.Add(((Achievement)i).ToString());
@@ -357,13 +426,13 @@ public class AchievementManagerEditor : Editor
 	{
 		if (count < 0)
 			count = EnumUtils.GetCount<Achievement>();
-		_am.achievementInfos = _am.achievementInfos.Resize<AchievementInfo>(count);
+		_am.achievementGroupInfos = _am.achievementGroupInfos.Resize<AchievementGroupInfo>(count);
 		_curIndex = Mathf.Min(_curIndex, count - 1);
 
 		// Reassign the id
-		for (int i = 0, imax = _am.achievementInfos.Length; i < imax; i++) {
-			if (_am.achievementInfos[i].id != (Achievement)i)
-				_am.achievementInfos[i].id = (Achievement)i;
+		for (int i = 0, imax = _am.achievementGroupInfos.Length; i < imax; i++) {
+			if (_am.achievementGroupInfos[i].id != (Achievement)i)
+				_am.achievementGroupInfos[i].id = (Achievement)i;
 		}
 	}
 
@@ -371,7 +440,7 @@ public class AchievementManagerEditor : Editor
 	{
 		bool debugMode = EditorGUILayout.Toggle("Debug Mode", _am.debugMode);
 		if (debugMode != _am.debugMode) {
-			Undo.RegisterUndo(_am, "Edit Debug Mode");
+			Undo.RegisterCompleteObjectUndo(_am, "Edit Debug Mode");
 			_am.debugMode = debugMode;
 		}
 	}

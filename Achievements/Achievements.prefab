@@ -35,8 +35,8 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 4587257949895648}
-  - component: {fileID: 114079535515367908}
   - component: {fileID: 114303930859172810}
+  - component: {fileID: 114079535515367908}
   m_Layer: 5
   m_Name: Title
   m_TagString: Untagged
@@ -132,9 +132,9 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 4200347393665044}
-  - component: {fileID: 114829802077622592}
   - component: {fileID: 65595384238536254}
   - component: {fileID: 114308496320366340}
+  - component: {fileID: 114829802077622592}
   m_Layer: 5
   m_Name: BackgroundBackButton
   m_TagString: Untagged
@@ -150,8 +150,8 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 4013444462200848}
-  - component: {fileID: 114316858096199910}
   - component: {fileID: 114104630535840618}
+  - component: {fileID: 114316858096199910}
   m_Layer: 5
   m_Name: ScrollView
   m_TagString: Untagged
@@ -167,7 +167,6 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 4486130946084760}
-  - component: {fileID: 114778180815570506}
   m_Layer: 5
   m_Name: Achievements
   m_TagString: Untagged
@@ -468,16 +467,16 @@ MonoBehaviour:
   mTermSecondary: 
   PrimaryTermModifier: 0
   SecondaryTermModifier: 0
+  TermPrefix: 
+  TermSuffix: 
   LocalizeOnAwake: 1
-  Source: {fileID: 114231216096503466, guid: 22de9d25996b94cf1a3321834a7df28b, type: 2}
+  Source: {fileID: 0}
   mTarget: {fileID: 114079535515367908}
-  CanUseSecondaryTerm: 1
-  AllowMainTermToBeRTL: 1
-  AllowSecondTermToBeRTL: 0
   IgnoreRTL: 0
   MaxCharactersInRTL: 0
   IgnoreNumbersInRTL: 0
   CorrectAlignmentForRTL: 1
+  AddSpacesToJoinedLanguages: 0
   TranslatedObjects: []
   LocalizeCallBack:
     Target: {fileID: 0}
@@ -504,7 +503,7 @@ MonoBehaviour:
   onSelect: []
   onDeselect: []
   onClick:
-  - mTarget: {fileID: 114778180815570506}
+  - mTarget: {fileID: 0}
     mMethodName: OnBackClick
     mParameters: []
     oneShot: 0
@@ -745,26 +744,6 @@ MonoBehaviour:
   mAtlas: {fileID: 11400000, guid: 62adb30369acbf943a67cee0f69267a3, type: 2}
   mSpriteName: X Mark
   mFillCenter: 1
---- !u!114 &114778180815570506
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1796213235231296}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 13d9a6b6e92c4d5419e35a933e8fa76a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _panelGO: {fileID: 1567489640672870}
-  _hasAndroidBackClick: 1
-  _slotPrefab: {fileID: 1000010319233336, guid: 66f2eb67d788fa34dbe9fe25db8fd8ac,
-    type: 2}
-  _numSlots: 0
-  _grid: {fileID: 114361706492573774}
-  _prevButtonGO: {fileID: 0}
-  _nextButtonGO: {fileID: 0}
-  _lazyLoading: 1
 --- !u!114 &114829571982234446
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -875,7 +854,7 @@ MonoBehaviour:
   mFillCenter: 1
 --- !u!114 &114905139928831342
 MonoBehaviour:
-  m_ObjectHideFlags: 1
+  m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1567489640672870}
@@ -932,9 +911,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d7534bf699bd9ae4c87c1d965ee35c70, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startOffset: 0.5
-  time: 0.3
-  delay: 0
+  _startOffset: 0.5
+  _duration: 0.3
+  _delay: 0
   tweenType: 27
-  soundEffect: {fileID: 0}
-  ignoreTimeScale: 1
+  _ignoreTimeScale: 1
+  loop: 0
+  _soundEffect: {fileID: 0}

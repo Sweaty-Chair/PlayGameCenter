@@ -5,109 +5,67 @@ namespace SweatyChair
 {
 
 	[System.Serializable]
-	public class AchievementInfo
+	public struct AchievementInfo
 	{
 
-		private const string GS_ACHIEVEMENT_PROGRESSES = "achievementProgresses";
-		private const string GS_ACHIEVEMENT_REWARDED_INDEXES = "achievementRewardedIndexes";
-		// + AchievementName, e.g. GameCenterPlayGamesAchievementTotalDistance, GameCenterPlayGamesAchievementTotalNumMutation
-		private const string PREF_ACHIEVEMENT_CURRENT_COMPLETED = "PlayGameCenterAchievementCurrentCompleted";
-
-		public Achievement id;
+		// Name of the achievement, used for in-game UI only
 		public string name;
+		// Description of the achievement, used for in-game UI only
 		public string description;
-
-		public bool isIncrement = false;
-		public bool isInGame = true;
-
-		public int[] requirements = new int[0];
-		public string[] iOSIds = new string[0];
-		public string[] androidIds = new string[0];
+		// Required count for completing this achievement
+		public int requirement;
+		// Achievement ID setup in iTunesConnect console, format as: "com.sweatychair.gamename.achievementname"
+		public string iOSId;
+		// Achievement ID setup in Play Games console, format as: "CgkI9snButIFEAIQAw"
+		public string androidId;
 		// Reward used for in game achievements only
-		public Reward[] rewards = new Reward[0];
+		public Reward reward;
+
+		// Cache for getting the currentCompleted
+		[System.NonSerialized]
+		private AchievementGroupInfo _groupInfo;
+
+		[System.NonSerialized]
+		private int _index;
 
 		public int currentCompleted {
 			get {
-				if (isInGame) { // Use Game Save for in game achievement
-					Dictionary<int, int> dict = GameSaveManager.GetIntDictionary(GS_ACHIEVEMENT_PROGRESSES);
-
-					// TODO: backward compatiable - 1.0.4
-					if (PlayerPrefs.HasKey(PREF_ACHIEVEMENT_CURRENT_COMPLETED + id)) {
-						dict[(int)id] = PlayerPrefs.GetInt(PREF_ACHIEVEMENT_CURRENT_COMPLETED + id);
-						PlayerPrefs.DeleteKey(PREF_ACHIEVEMENT_CURRENT_COMPLETED + id);
-					}
-					// End TODO
-
-					if (dict.ContainsKey((int)id))
-						return dict[(int)id];
+				if (_groupInfo == null)
 					return 0;
-				} else {
-					return PlayerPrefs.GetInt(PREF_ACHIEVEMENT_CURRENT_COMPLETED + id);
-				}
-			}
-			set {
-				if (isInGame) // Use Game Save for in game achievement
-				GameSaveManager.SetIntDictionary(GS_ACHIEVEMENT_PROGRESSES, (int)id, value);
-				else
-					PlayerPrefs.SetInt(PREF_ACHIEVEMENT_CURRENT_COMPLETED + id, value);
+				return _groupInfo.currentCompleted;
 			}
 		}
 
-		// The rewarded index, -1 if never rewarded
-		public int rewardedIndex {
+		public bool isCompleted {
+			get { return currentCompleted >= requirement; }
+		}
+
+		public float progress {
+			get { return 1f * currentCompleted / requirement; }
+		}
+
+		public bool isRewarded {
 			get {
-				Dictionary<int, int> dict = GameSaveManager.GetIntDictionary(GS_ACHIEVEMENT_REWARDED_INDEXES);
-				if (dict.ContainsKey((int)id))
-					return dict[(int)id];
-				return -1;
-			}
-			set { GameSaveManager.SetIntDictionary(GS_ACHIEVEMENT_REWARDED_INDEXES, (int)id, value); }
-		}
-
-		public bool hasReward {
-			get {
-				for (int i = 0, imax = requirements.Length; i < imax; i++) {
-					if (!IsCompleted(i))
-						return false;
-					if (i > rewardedIndex)
-						return true;
-				}
-				return false;
+				if (_groupInfo == null)
+					return false;
+				return _groupInfo.IsRewarded(_index);
 			}
 		}
 
-		// Return true if any new completed, for in game reward only
-		public void AddOrSetCompleted(int totalOrIncrement = 1)
+		public void Reward()
 		{
-			if (isIncrement)
-				currentCompleted += totalOrIncrement;
-			else
-				currentCompleted = totalOrIncrement;
+			_groupInfo.Reward(_index);
 		}
 
-		public bool IsCompleted(int index)
+		public void SetGroupInfo(AchievementGroupInfo groupInfo, int index)
 		{
-			if (index >= requirements.Length)
-				return false;
-			return currentCompleted >= requirements[index];
-		}
-
-		public bool IsRewarded(int index)
-		{
-			return rewardedIndex >= index;
+			_groupInfo = groupInfo;
+			_index = index;
 		}
 
 		public override string ToString()
 		{
-			return string.Format("[AchievementInfo: id={0}, name={1}, isIncrement={2}, isInGame={3}, requirementArray={4}, currentCompleted={5}, rewardedIndex={6}]",
-				id,
-				name,
-				isIncrement,
-				isInGame,
-				StringUtils.ArrayToString(requirements),
-				currentCompleted,
-				rewardedIndex
-			);
+			return string.Format("[AchievementInfo: name={0}, description={1}, requirement={2}, iOSid={3}, androidId={4}, reward={5}]", name, description, requirement, iOSId, androidId, reward);
 		}
 
 	}
