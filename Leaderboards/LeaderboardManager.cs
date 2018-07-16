@@ -42,20 +42,23 @@ namespace SweatyChair
 		// Toogle to determine having in-game scores
 		public bool hasInGameLeaderboards = false;
 		// Toogle to load top scores and fire the result with topScoresLoadedEvent
-		public bool loadTopScores = false;
+		public bool shouldLoadTopScores = false;
 		// Number top scores to download
-		public int numTopScores = 10;
+		public int loadTopScoreCount = 10;
 		// Toggle to load my scores and fire the result with myScoreLoadedEvent
-		public bool loadMyScores = false;
+		public bool shouldLoadMyScores = false;
 
 		public bool debugMode = false;
 	
+		// Current loaded leaderboard-timescope pair, timescopes are loaded on sequence for each leaderboard, e.g. DefaultLeaderboard-AllTime, then DefaultLeaderboard-Week, then DefaultLeaderboard-Daily
 		private static Dictionary<Leaderboard, TimeScope> _topScoresLoadedTimeScopeDict = new Dictionary<Leaderboard, TimeScope>();
+		// Current loaded leaderboard-boolean pair, leaderboards are loaded on sequence for my scores, e.g. DefaultLeaderboard, SecondLeaderboard, etc.
 		private static Dictionary<Leaderboard, bool> _isMyScoreLoadedDict = new Dictionary<Leaderboard, bool>();
 	
 		// The all-time leaderboard score entry, for different leaderboard names
 		private static LeaderboardEntry[] _myLeaderboardEntries = new LeaderboardEntry[0];
 	
+		// LeaderboardEntry lists by leaderboard
 		private static Dictionary<Leaderboard, List<LeaderboardEntry>> _topScoresAllTimeDict = new Dictionary<Leaderboard, List<LeaderboardEntry>>();
 		private static Dictionary<Leaderboard, List<LeaderboardEntry>> _topScoresWeekDict = new Dictionary<Leaderboard, List<LeaderboardEntry>>();
 		private static Dictionary<Leaderboard, List<LeaderboardEntry>> _topScoresTodayDict = new Dictionary<Leaderboard, List<LeaderboardEntry>>();
@@ -100,9 +103,9 @@ namespace SweatyChair
 
 		public static int numLoadedTopScores {
 			get {
-				if (!s_InstanceExists || !s_Instance.loadTopScores)
+				if (!s_InstanceExists || !s_Instance.shouldLoadTopScores)
 					return 0;
-				return s_Instance.numTopScores;
+				return s_Instance.loadTopScoreCount;
 			}
 		}
 
@@ -110,6 +113,7 @@ namespace SweatyChair
 		{
 			base.Awake();
 
+			// Return and not initialize score variables, if no in-game leaderboard needed
 			if (!hasInGameLeaderboards)
 				return;
 
@@ -128,9 +132,9 @@ namespace SweatyChair
 			currentTimeScope = (TimeScope)PlayerPrefs.GetInt(PREF_CURRENT_TIME_SCOPE);
 
 			for (int i = 0, imax = EnumUtils.GetCount<Leaderboard>(); i < imax; i++) {
-				if (loadMyScores)
+				if (shouldLoadMyScores)
 					_isMyScoreLoadedDict.Add((Leaderboard)i, false);
-				if (loadTopScores)
+				if (shouldLoadTopScores)
 					_topScoresLoadedTimeScopeDict.Add((Leaderboard)i, TimeScope.AllTime);
 			}
 
@@ -142,14 +146,14 @@ namespace SweatyChair
 			GPGManager.loadCurrentPlayerLeaderboardScoreSucceededEvent += OnMyScoreLoaded;
 			#endif
 
-			PlayGameCenterManager.authenticationSucceededEvent += CheckLoadTopScores;
+			PlayGameCenterManager.authenticationSucceededEvent += CheckshouldLoadTopScores;
 		}
 
 		#region Leaderboard top scores loaded callbacks
 
-		private void CheckLoadTopScores()
+		private void CheckshouldLoadTopScores()
 		{
-			if (loadMyScores) {
+			if (shouldLoadMyScores) {
 				foreach (LeaderboardInfo li in leaderboardInfos) {
 					#if UNITY_IOS || UNITY_TVOS
 					GameCenterBinding.retrieveScoresForPlayerIds(new string[1]{ GameCenterBinding.playerIdentifier() }, li.leaderboardId);
@@ -163,7 +167,7 @@ namespace SweatyChair
 			CheckOfflineHighScores();
 			#endif
 
-			if (loadTopScores)
+			if (shouldLoadTopScores)
 				DownloadAllLeaderboardTopScores(TimeScope.AllTime);
 		}
 
@@ -243,7 +247,7 @@ namespace SweatyChair
 				if (debugMode)
 					DebugUtils.Log(gcs);
 
-				DoMyScoreLoaded(l, gcs.value);
+				ProcessMyLoadedScore(l, gcs.value);
 			}
 		}
 
@@ -262,14 +266,16 @@ namespace SweatyChair
 				DebugUtils.Log(score);
 			}
 
-			DoMyScoreLoaded(l, score.value);
+			ProcessMyLoadedScore(l, score.value);
 		}
 
 		#endif
 
-		private void DoMyScoreLoaded(Leaderboard leaderboard, long score)
+		private void ProcessMyLoadedScore(Leaderboard leaderboard, long score)
 		{
-			// Events to replace local score entry with the online one ONLY when online score is higher
+			// Replace local score entry with the online one ONLY when online score is higher
+			if (GetMyLeaderboardScore(leaderboard) < score)
+				SetMyLeaderboardScore(leaderboard, score);
 			if (myScoreLoadedEvent != null)
 				myScoreLoadedEvent(leaderboard, score);
 		}
@@ -329,7 +335,7 @@ namespace SweatyChair
 				Debug.LogFormat("LeaderboardManager:DownloadLeaderboardTopScores({0},{1})", leaderboard, timeScope);
 
 			#if UNITY_IOS || UNITY_TVOS
-			GameCenterBinding.retrieveScores(false, TimeScope2GameCenterLeaderboardTimeScope(timeScope), 1, s_Instance.numTopScores, s_Instance.leaderboardInfos[(int)leaderboard].leaderboardId);
+			GameCenterBinding.retrieveScores(false, TimeScope2GameCenterLeaderboardTimeScope(timeScope), 1, s_Instance.loadTopScoreCount, s_Instance.leaderboardInfos[(int)leaderboard].leaderboardId);
 			#elif UNITY_ANDROID && !CHS
 			PlayGameServices.loadScoresForLeaderboard(s_Instance.leaderboardInfos[(int)leaderboard].leaderboardId, TimeScope2GPGLeaderboardTimeScope(timeScope), false, false);
 			#endif
@@ -362,7 +368,7 @@ namespace SweatyChair
 
 			SetMyLeaderboardScore(currentLeaderboard, score);
 
-			if (s_Instance.loadTopScores) // Skip if no top scores to compair
+			if (s_Instance.shouldLoadTopScores) // Skip if no top scores to compair
 				return;
 
 			// Only try update leaderboards when getting a local highscore, to save network brandwidth
@@ -554,17 +560,17 @@ namespace SweatyChair
 		private static int GetMyLeaderboardRank(Leaderboard leaderboard = (Leaderboard)0, TimeScope timeScope = TimeScope.AllTime)
 		{
 			List<LeaderboardEntry> topScores;
-			int numTopScores;
+			int loadTopScoreCount;
 			if (timeScope == TimeScope.AllTime) { // Just my leaderboard score
 				return GetMyLeaderboardEntry(leaderboard).rank;
 			} else { // Loop and find
 				topScores = GetTopScores(leaderboard, timeScope);
-				numTopScores = topScores.Count;
-				for (int i = 0, imax = numTopScores; i < imax; i++) {
+				loadTopScoreCount = topScores.Count;
+				for (int i = 0, imax = loadTopScoreCount; i < imax; i++) {
 					if (topScores[i].name == myName)
 						return topScores[i].rank;
 				}
-				return numTopScores + 1; // Return the top scores people + 1
+				return loadTopScoreCount + 1; // Return the top scores people + 1
 			}
 		}
 
@@ -707,10 +713,10 @@ namespace SweatyChair
 		public static void WriteTopScores(Leaderboard leaderboard = (Leaderboard)0, TimeScope timeScope = TimeScope.AllTime)
 		{
 			List<LeaderboardEntry> topScores = GetTopScores(leaderboard, timeScope);
-			int numTopScores = topScores.Count;
+			int loadTopScoreCount = topScores.Count;
 
 			for (int i = 0, imax = LeaderboardManager.numLoadedTopScores; i < imax; i++) {
-				if (i >= numTopScores) // This only happens in new leaderboard having not enough top scores
+				if (i >= loadTopScoreCount) // This only happens in new leaderboard having not enough top scores
 				break;
 				PlayerPrefs.SetString(PREF_TOP_SCORES + leaderboard + timeScope + i, topScores[i].prefData);
 			}
@@ -771,14 +777,14 @@ namespace SweatyChair
 			List<LeaderboardEntry> topScores = GetTopScores(leaderboard, timeScope);
 			LeaderboardEntry myLeaderboardEntry = GetMyLeaderboardEntry(leaderboard);
 
-			int numTopScores = topScores.Count;
+			int loadTopScoreCount = topScores.Count;
 			int myRank = GetMyLeaderboardRank(leaderboard, timeScope);
 
-			bool topScoresChanged = myRank <= numTopScores;
+			bool topScoresChanged = myRank <= loadTopScoreCount;
 			if (topScoresChanged) // Update my rank row first
 			topScores[myRank - 1] = new LeaderboardEntry(GetMyLeaderboardEntry(leaderboard), myRank);
 
-			for (int i = Mathf.Min(numTopScores, myRank - 1) - 1; i >= 0; i--) { // From either my upper rank, or top scores bottom, check toward top
+			for (int i = Mathf.Min(loadTopScoreCount, myRank - 1) - 1; i >= 0; i--) { // From either my upper rank, or top scores bottom, check toward top
 
 				LeaderboardEntry le = topScores[i]; // This top score entry
 
@@ -794,7 +800,7 @@ namespace SweatyChair
 				topScores[i] = new LeaderboardEntry(myLeaderboardEntry, newRank);
 				Debug.Log(i + "|" + topScores[i]);
 				// Move the ranks down
-				if (i == numTopScores - 1) // Skip if the bottom
+				if (i == loadTopScoreCount - 1) // Skip if the bottom
 					continue;
 				topScores[i + 1] = new LeaderboardEntry(le, newRank + 1);
 			}
