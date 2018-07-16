@@ -46,8 +46,8 @@ namespace SweatyChair
 
         void Start()
         {
-#if CHS
-			return;
+#if UNITY_ANDROID && CHS
+			return; // No PlayGameCenter for Android Chinese
 #endif
 
             bool shouldLogin = false;
@@ -86,10 +86,10 @@ namespace SweatyChair
             if (s_InstanceExists && s_Instance.debugMode)
                 Debug.LogFormat("PlayGameCenterManager:TryAuthentication({0}) - isAuthenticated={1}, isLastAuthenticationFailed={2}", forceMode, isAuthenticated, isLastAuthenticationFailed);
 
-            if (isAuthenticated)
+			if (IsSingedIn()) // If already logined, skip here
                 return;
 
-            if (isLastAuthenticationFailed && !forceMode)
+			if (isLastAuthenticationFailed && !forceMode) // If last login failed, don't do it again (unless in forceMode)
                 return;
 
             _isForcingAuthentication = forceMode;
@@ -109,15 +109,11 @@ namespace SweatyChair
 		private void OnAuthenticationSucceeded()
 		{
 			if (debugMode)
-				Debug.LogFormat("PlayGameCenterManager:OnAuthenticationSucceeded() - isAuthenticated:{0}", isAuthenticated);
-
-			if (isAuthenticated)
-				return;
-
-			if (playerNameLoadedEvent != null)
-				playerNameLoadedEvent(GameCenterBinding.playerAlias());
+				Debug.LogFormat("PlayGameCenterManager:OnAuthenticationSucceeded()");
 
 			ProcessAuthenticationSucceeded();
+
+			playerNameLoadedEvent?.Invoke(GameCenterBinding.playerAlias());
 		}
 
 #endif
@@ -127,26 +123,20 @@ namespace SweatyChair
 		private void OnAuthenticationSucceeded(string param)
 		{
 			if (debugMode)
-				Debug.LogFormat("PlayGameCenterManager:OnAuthenticationSucceeded({0}) - isAuthenticated:{1}", param, isAuthenticated);
-
-			if (isAuthenticated)
-				return;
+				Debug.LogFormat("PlayGameCenterManager:OnAuthenticationSucceeded({0})");
 
 			ProcessAuthenticationSucceeded();
 
-			if (playerNameLoadedEvent != null)
-				playerNameLoadedEvent(PlayGameServices.getLocalPlayerInfo().name);
+			playerNameLoadedEvent?.Invoke(PlayGameServices.getLocalPlayerInfo().name);
 		}
 
 #endif
 
         private void ProcessAuthenticationSucceeded()
         {
-            isAuthenticated = true;
             _isForcingAuthentication = false;
             PlayerPrefs.SetInt(PREF_PREVIOUS_LOGINED, 1);
-            if (authenticationSucceededEvent != null)
-                authenticationSucceededEvent();
+            authenticationSucceededEvent?.Invoke();
         }
 
         private static void OnAutheticationFailed(string error)
