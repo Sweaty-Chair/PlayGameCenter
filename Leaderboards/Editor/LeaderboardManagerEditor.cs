@@ -264,35 +264,35 @@ public class LeaderboardManagerEditor : Editor
 	{
 		bool hasInGameLeaderboards = EditorGUILayout.Toggle("Has In Game Leaderboards", _lm.hasInGameLeaderboards);
 		if (hasInGameLeaderboards != _lm.hasInGameLeaderboards) {
-			Undo.RegisterUndo(_lm, "Reassign Has In Game Leaderboards");
+			Undo.RegisterCompleteObjectUndo(_lm, "Reassign Has In Game Leaderboards");
 			_lm.hasInGameLeaderboards = hasInGameLeaderboards;
 		}
 
 		if (_lm.hasInGameLeaderboards) {
-			bool loadTopScores = EditorGUILayout.Toggle("Load Top Scores", _lm.loadTopScores);
-			if (loadTopScores != _lm.loadTopScores) {
-				Undo.RegisterUndo(_lm, "Reassign Load Top Scores");
-				_lm.loadTopScores = loadTopScores;
+			bool shouldLoadTopScores = EditorGUILayout.Toggle("Load Top Scores", _lm.shouldLoadTopScores);
+			if (shouldLoadTopScores != _lm.shouldLoadTopScores) {
+				Undo.RegisterCompleteObjectUndo(_lm, "Reassign Load Top Scores");
+				_lm.shouldLoadTopScores = shouldLoadTopScores;
 			}
 		}
 
-		if (_lm.hasInGameLeaderboards && _lm.loadTopScores) {
-			int numTopScores = EditorGUILayout.IntField("Number Top Scores", _lm.numTopScores);
-			if (numTopScores != _lm.numTopScores) {
-				Undo.RegisterUndo(_lm, "Reassign Number Top Scores");
-				_lm.numTopScores = numTopScores;
+		if (_lm.hasInGameLeaderboards && _lm.shouldLoadTopScores) {
+			int loadTopScoreCount = EditorGUILayout.IntField("Top Scores Count", _lm.loadTopScoreCount);
+			if (loadTopScoreCount != _lm.loadTopScoreCount) {
+				Undo.RegisterCompleteObjectUndo(_lm, "Reassign Number Top Scores");
+				_lm.loadTopScoreCount = loadTopScoreCount;
 			}
 		}
 
-		bool loadMyScores = EditorGUILayout.Toggle("Load My Scores", _lm.loadMyScores);
-		if (loadMyScores != _lm.loadMyScores) {
-			Undo.RegisterUndo(_lm, "Reassign Load Top Scores");
-			_lm.loadMyScores = loadMyScores;
+		bool shouldLoadMyScores = EditorGUILayout.Toggle("Load My Scores", _lm.shouldLoadMyScores);
+		if (shouldLoadMyScores != _lm.shouldLoadMyScores) {
+			Undo.RegisterCompleteObjectUndo(_lm, "Reassign Load Top Scores");
+			_lm.shouldLoadMyScores = shouldLoadMyScores;
 		}
 
 		bool debugMode = EditorGUILayout.Toggle("Debug Mode", _lm.debugMode);
 		if (debugMode != _lm.debugMode) {
-			Undo.RegisterUndo(_lm, "Reassign Debug Mode");
+			Undo.RegisterCompleteObjectUndo(_lm, "Reassign Debug Mode");
 			_lm.debugMode = debugMode;
 		}
 	}
