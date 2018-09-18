@@ -823,7 +823,7 @@ namespace SweatyChair
 
 		#if UNITY_EDITOR
 
-		[MenuItem("Debug/Leaderboards/Delete All My Scores", false, 601)]
+		[MenuItem("Debug/Leaderboards/Delete All My Scores", false, 600)]
 		private static void DeleteMyLeaderboardScore()
 		{
 			for (int i = 0, imax = EnumUtils.GetCount<Leaderboard>(); i < imax; i++)
@@ -832,7 +832,7 @@ namespace SweatyChair
 				ReadMyLeaderboardScores();
 		}
 
-		[MenuItem("Debug/Leaderboards/Delete All Top Scores", false, 601)]
+		[MenuItem("Debug/Leaderboards/Delete All Top Scores")]
 		private static void DeleteAllTopScores()
 		{
 			for (int i = 0, imax = EnumUtils.GetCount<Leaderboard>(); i < imax; i++) { // For each leaderboard name
@@ -844,7 +844,7 @@ namespace SweatyChair
 			}
 		}
 
-		[MenuItem("Debug/Leaderboards/Print All My Leaderboard Scores", false, 601)]
+		[MenuItem("Debug/Leaderboards/Print All My Leaderboard Scores")]
 		private static void PrintAllMyLeaderboardScores()
 		{
 			for (int i = 0, imax = EnumUtils.GetCount<Leaderboard>(); i < imax; i++) {
@@ -856,7 +856,7 @@ namespace SweatyChair
 			}
 		}
 
-		[MenuItem("Debug/Leaderboards/Print All Top Scores", false, 601)]
+		[MenuItem("Debug/Leaderboards/Print All Top Scores")]
 		private static void PrintAllTopScores()
 		{
 			for (int i = 0, imax = EnumUtils.GetCount<Leaderboard>(); i < imax; i++)
