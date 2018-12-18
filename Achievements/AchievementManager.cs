@@ -38,9 +38,9 @@ namespace SweatyChair
 
 		public static bool hasReward {
 			get {
-				if (!s_InstanceExists)
+				if (!instanceExists)
 					return false;
-				foreach (AchievementGroupInfo ai in s_Instance.achievementGroupInfos) {
+				foreach (AchievementGroupInfo ai in instance.achievementGroupInfos) {
 					if (ai.hasReward)
 						return true;
 				}
@@ -67,9 +67,9 @@ namespace SweatyChair
 		/// </summary>
 		public static AchievementGroupInfo[] GetGroupInfos()
 		{
-			if (!s_InstanceExists)
+			if (!instanceExists)
 				return new AchievementGroupInfo[0];
-			return s_Instance.achievementGroupInfos;
+			return instance.achievementGroupInfos;
 		}
 
 		/// <summary>
@@ -77,22 +77,22 @@ namespace SweatyChair
 		/// </summary>
 		public static AchievementInfo[] GetOngoingInfos()
 		{
-			if (!s_InstanceExists)
+			if (!instanceExists)
 				return new AchievementInfo[0];
-			AchievementInfo[] results = new AchievementInfo[s_Instance.achievementGroupInfos.Length];
-			for (int i = 0, imax = s_Instance.achievementGroupInfos.Length; i < imax; i++)
-				results[i] = s_Instance.achievementGroupInfos[i].GetOngoingInfo();
+			AchievementInfo[] results = new AchievementInfo[instance.achievementGroupInfos.Length];
+			for (int i = 0, imax = instance.achievementGroupInfos.Length; i < imax; i++)
+				results[i] = instance.achievementGroupInfos[i].GetOngoingInfo();
 			return results;
 		}
 
 		public static void Report(Achievement achievement, int totalOrIncrement = 1)
 		{
-			if (!s_InstanceExists) {
+			if (!instanceExists) {
 				Debug.LogWarning("AchievementManager:Report - s_Instance=null");
 				return;
 			}
 
-			if (s_Instance.debugMode)
+			if (instance.debugMode)
 				Debug.LogFormat("AchievementManager:Report({0},{1})", achievement, totalOrIncrement);
 
 			AchievementGroupInfo groupInfo = GetGroupInfo(achievement);
@@ -221,20 +221,20 @@ namespace SweatyChair
 
 		public static AchievementGroupInfo GetGroupInfo(Achievement achievement)
 		{
-			if (!s_InstanceExists)
+			if (!instanceExists)
 				return null;
 
 			int index = (int)achievement;
 
-			if (index >= s_Instance.achievementGroupInfos.Length) {
+			if (index >= instance.achievementGroupInfos.Length) {
 				Debug.LogFormat("AchievementManager:GetAchievementInfo - Invalid achievement={0}", achievement);
 				return null;
 			}
 
-			if (s_Instance.achievementGroupInfos[index].id != achievement)
+			if (instance.achievementGroupInfos[index].id != achievement)
 				Debug.LogWarningFormat("AchievementManager:GetAchievementInfo - The {0}-th _achievementInfo.id != {1}", index, achievement);
 
-			return s_Instance.achievementGroupInfos[index];
+			return instance.achievementGroupInfos[index];
 		}
 
 		public static void ToggleUI(bool doShow = true)
@@ -259,8 +259,8 @@ namespace SweatyChair
 		[UnityEditor.MenuItem("Debug/Achievements/Print Achievement Infos")]
 		private static void DebugPrintAchievementInfos()
 		{
-			if (DebugUtils.CheckPlaying() && s_InstanceExists)
-				s_Instance.PrintAchievementInfos();
+			if (DebugUtils.CheckPlaying() && instanceExists)
+				instance.PrintAchievementInfos();
 		}
 
 		[ContextMenu("Print Achievement Infos")]

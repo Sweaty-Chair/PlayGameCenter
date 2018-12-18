@@ -103,9 +103,9 @@ namespace SweatyChair
 
 		public static int numLoadedTopScores {
 			get {
-				if (!s_InstanceExists || !s_Instance.shouldLoadTopScores)
+				if (!instanceExists || !instance.shouldLoadTopScores)
 					return 0;
-				return s_Instance.loadTopScoreCount;
+				return instance.loadTopScoreCount;
 			}
 		}
 
@@ -291,7 +291,7 @@ namespace SweatyChair
 
 		public static void ShowPlayGameCenterLeaderboard(Leaderboard leaderboard, TimeScope timeScope = TimeScope.AllTime)
 		{
-			if (!s_InstanceExists)
+			if (!instanceExists)
 				return;
 			if (!PlayGameCenterManager.isAuthenticated)
 				PlayGameCenterManager.TryAuthentication(true);
@@ -319,7 +319,7 @@ namespace SweatyChair
 
 		public static void DownloadAllLeaderboardTopScores(TimeScope timeScope)
 		{
-			if (s_InstanceExists && s_Instance.debugMode)
+			if (instanceExists && instance.debugMode)
 				Debug.LogFormat("LeaderboardManager:DownloadAllLeaderboardTopScores({0})", timeScope);
 
 			for (int i = 0, imax = EnumUtils.GetCount<Leaderboard>(); i < imax; i++)
@@ -328,10 +328,10 @@ namespace SweatyChair
 
 		public static void DownloadLeaderboardTopScores(Leaderboard leaderboard, TimeScope timeScope = TimeScope.AllTime)
 		{
-			if (!s_InstanceExists)
+			if (!instanceExists)
 				return;
 			
-			if (s_Instance.debugMode)
+			if (instance.debugMode)
 				Debug.LogFormat("LeaderboardManager:DownloadLeaderboardTopScores({0},{1})", leaderboard, timeScope);
 
 			#if UNITY_IOS || UNITY_TVOS
@@ -348,17 +348,17 @@ namespace SweatyChair
 
 		public static void Report(long score)
 		{
-			if (!s_InstanceExists)
+			if (!instanceExists)
 				return;
 
-			if (s_Instance.debugMode)
+			if (instance.debugMode)
 				Debug.LogFormat("ScoreManager:ReportScore({0})", score);
 
 			Report(currentLeaderboard, score); // Submit the score to Game Center / Play Games anyway, highscore or not is handle in their end
 
 			long myLocalScore = GetMyLeaderboardScore(currentLeaderboard);
 
-			if (s_Instance.debugMode)
+			if (instance.debugMode)
 				Debug.LogFormat("ScoreManager:ReportScore - score={0}, myLocalScore={1}", score, myLocalScore);
 
 			if (myLocalScore >= score) // No local highscore changed, return
@@ -368,7 +368,7 @@ namespace SweatyChair
 
 			SetMyLeaderboardScore(currentLeaderboard, score);
 
-			if (s_Instance.shouldLoadTopScores) // Skip if no top scores to compair
+			if (instance.shouldLoadTopScores) // Skip if no top scores to compair
 				return;
 
 			// Only try update leaderboards when getting a local highscore, to save network brandwidth
@@ -386,17 +386,17 @@ namespace SweatyChair
 
 		public static void Report(Leaderboard leaderboard, long score)
 		{
-			if (!s_InstanceExists)
+			if (!instanceExists)
 				return;
 			
 			int leaderboardIndex = (int)leaderboard;
 
-			if (leaderboardIndex >= s_Instance.leaderboardInfos.Length) {
+			if (leaderboardIndex >= instance.leaderboardInfos.Length) {
 				Debug.LogFormat("LeaderboardManager:Report - leaderboard index ({0}) out of bound.", leaderboardIndex);
 				return;
 			}
 
-			if (s_Instance.debugMode)
+			if (instance.debugMode)
 				Debug.LogFormat("LeaderboardManager:Report({0},{1})", leaderboard, score);
 
 			#if UNITY_IOS || UNITY_TVOS
@@ -768,10 +768,10 @@ namespace SweatyChair
 		// If online and connected to Game Center / Play Games, this is not neccessary and new downloaded leaderboard will override this
 		private static void CompareScoreToLeaderboard(Leaderboard leaderboard = (Leaderboard)0, TimeScope timeScope = TimeScope.AllTime)
 		{
-			if (!s_InstanceExists)
+			if (!instanceExists)
 				return;
 
-			if (s_Instance.debugMode)
+			if (instance.debugMode)
 				Debug.LogFormat("LeaderboardManager:CompareScoreToLeaderboard({0},{1})", leaderboard, timeScope);
 
 			List<LeaderboardEntry> topScores = GetTopScores(leaderboard, timeScope);
@@ -805,7 +805,7 @@ namespace SweatyChair
 				topScores[i + 1] = new LeaderboardEntry(le, newRank + 1);
 			}
 
-			if (s_Instance.debugMode)
+			if (instance.debugMode)
 				Debug.LogFormat("LeaderboardManager:CompareScoreToLeaderboard - topScoresChanged={0}", topScoresChanged);
 
 			if (topScoresChanged) {
@@ -895,7 +895,7 @@ namespace SweatyChair
 				Debug.Log("curTimeScope=" + currentTimeScope);
 			else
 				Debug.Log("curTimeScope=" + PlayerPrefs.GetInt(PREF_CURRENT_TIME_SCOPE));
-			DebugUtils.LogEach(s_Instance.leaderboardInfos, "leaderboardInfos");
+			DebugUtils.LogEach(instance.leaderboardInfos, "leaderboardInfos");
 		}
 
 		#endif

@@ -83,7 +83,7 @@ namespace SweatyChair
 
         public static void TryAuthentication(bool forceMode = false)
         {
-            if (s_InstanceExists && s_Instance.debugMode)
+            if (instanceExists && instance.debugMode)
                 Debug.LogFormat("PlayGameCenterManager:TryAuthentication({0}) - isAuthenticated={1}, isLastAuthenticationFailed={2}", forceMode, isAuthenticated, isLastAuthenticationFailed);
 
 			if (IsSingedIn()) // If already logined, skip here
