@@ -298,7 +298,7 @@ namespace SweatyChair
 			#if UNITY_IOS || UNITY_TVOS
 			GameCenterBinding.showLeaderboardWithTimeScopeAndLeaderboard(TimeScope2GameCenterLeaderboardTimeScope(timeScope), s_Instance.leaderboardInfos[(int)leaderboard].leaderboardId);
 			#elif UNITY_ANDROID && !CHS
-			PlayGameServices.showLeaderboard(s_Instance.leaderboardInfos[(int)leaderboard].leaderboardId);
+			PlayGameServices.showLeaderboard(instance.leaderboardInfos[(int)leaderboard].leaderboardId);
 			#endif
 		}
 
@@ -337,7 +337,7 @@ namespace SweatyChair
 			#if UNITY_IOS || UNITY_TVOS
 			GameCenterBinding.retrieveScores(false, TimeScope2GameCenterLeaderboardTimeScope(timeScope), 1, s_Instance.loadTopScoreCount, s_Instance.leaderboardInfos[(int)leaderboard].leaderboardId);
 			#elif UNITY_ANDROID && !CHS
-			PlayGameServices.loadScoresForLeaderboard(s_Instance.leaderboardInfos[(int)leaderboard].leaderboardId, TimeScope2GPGLeaderboardTimeScope(timeScope), false, false);
+			PlayGameServices.loadScoresForLeaderboard(instance.leaderboardInfos[(int)leaderboard].leaderboardId, TimeScope2GPGLeaderboardTimeScope(timeScope), false, false);
 			#endif
 		}
 
@@ -403,7 +403,7 @@ namespace SweatyChair
 			GameCenterBinding.reportScore(score, s_Instance.leaderboardInfos[leaderboardIndex].leaderboardId);
 			#elif UNITY_ANDROID && !CHS
 			if (PlayGameCenterManager.isAuthenticated)
-				PlayGameServices.submitScore(s_Instance.leaderboardInfos[leaderboardIndex].leaderboardId, score);
+				PlayGameServices.submitScore(instance.leaderboardInfos[leaderboardIndex].leaderboardId, score);
 			else
 				SetCachedHighScore(leaderboard, score);
 			#endif
@@ -477,7 +477,7 @@ namespace SweatyChair
 		private static Leaderboard GetLeaderboard(GPGScore gScore)
 		{
 			for (int i = 0, imax = EnumUtils.GetCount<Leaderboard>(); i < imax; i++) {
-				if (gScore.leaderboardId == s_Instance.leaderboardInfos[i].leaderboardId)
+				if (gScore.leaderboardId == instance.leaderboardInfos[i].leaderboardId)
 					return (Leaderboard)i;
 			}
 			return (Leaderboard)0;
