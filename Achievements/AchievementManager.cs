@@ -247,8 +247,10 @@ namespace SweatyChair
 
 		[UnityEditor.MenuItem("Debug/Achievements/Print Achievement Infos")]
 		private static void DebugPrintAchievementInfos() {
-			if (DebugUtils.CheckPlaying() && instanceExists)
-				instance.PrintAchievementInfos();
+			DebugUtils.CheckPlaying(() => {
+				if (instanceExists)
+					instance.PrintAchievementInfos();
+			});
 		}
 
 		[ContextMenu("Print Achievement Infos")]
