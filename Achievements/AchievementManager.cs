@@ -108,7 +108,7 @@ namespace SweatyChair
 #if UNITY_IOS || UNITY_TVOS
 
 			for (int i = 0, imax = groupInfo.achievementInfos.Length; i < imax; i++) {
-				if (s_Instance.debugMode)
+				if (instance.debugMode)
 					Debug.LogFormat("AchievementManager:Report - currentCompleted={0}, requirements={1}", groupInfo.currentCompleted, groupInfo.achievementInfos[i].requirement);
 				GameCenterBinding.reportAchievement(groupInfo.achievementInfos[i].iOSId, Mathf.Min(100f * groupInfo.currentCompleted / groupInfo.achievementInfos[i].requirement, 100));
 			}
@@ -137,14 +137,14 @@ namespace SweatyChair
 	
 		private static void OnAchievementsLoaded(List<GameCenterAchievement> achievements)
 		{
-			if (s_InstanceExists && s_Instance.debugMode) {
+			if (instanceExists && instance.debugMode) {
 				Debug.LogFormat("AchievementManager:OnAchievementsLoaded - achievements.Count={0}", achievements.Count);
 				DebugUtils.Log(achievements);
 			}
 
 			// Sync online achievement progress to local (new install but old progress)
 			foreach (GameCenterAchievement achievement in achievements) {
-				foreach (AchievementGroupInfo ai in s_Instance.achievementGroupInfos) {
+				foreach (AchievementGroupInfo ai in instance.achievementGroupInfos) {
 				
 					for (int i = 0, imax = ai.achievementInfos.Length; i < imax; i++) { // Loop throught all achievements pre-set
 						if (achievement.identifier == ai.achievementInfos[i].iOSId) {

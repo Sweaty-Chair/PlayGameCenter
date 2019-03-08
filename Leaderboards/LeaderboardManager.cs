@@ -296,7 +296,7 @@ namespace SweatyChair
 			if (!PlayGameCenterManager.isAuthenticated)
 				PlayGameCenterManager.TryAuthentication(true);
 			#if UNITY_IOS || UNITY_TVOS
-			GameCenterBinding.showLeaderboardWithTimeScopeAndLeaderboard(TimeScope2GameCenterLeaderboardTimeScope(timeScope), s_Instance.leaderboardInfos[(int)leaderboard].leaderboardId);
+			GameCenterBinding.showLeaderboardWithTimeScopeAndLeaderboard(TimeScope2GameCenterLeaderboardTimeScope(timeScope), instance.leaderboardInfos[(int)leaderboard].leaderboardId);
 			#elif UNITY_ANDROID && !CHS
 			PlayGameServices.showLeaderboard(instance.leaderboardInfos[(int)leaderboard].leaderboardId);
 			#endif
@@ -335,7 +335,7 @@ namespace SweatyChair
 				Debug.LogFormat("LeaderboardManager:DownloadLeaderboardTopScores({0},{1})", leaderboard, timeScope);
 
 			#if UNITY_IOS || UNITY_TVOS
-			GameCenterBinding.retrieveScores(false, TimeScope2GameCenterLeaderboardTimeScope(timeScope), 1, s_Instance.loadTopScoreCount, s_Instance.leaderboardInfos[(int)leaderboard].leaderboardId);
+			GameCenterBinding.retrieveScores(false, TimeScope2GameCenterLeaderboardTimeScope(timeScope), 1, instance.loadTopScoreCount, instance.leaderboardInfos[(int)leaderboard].leaderboardId);
 			#elif UNITY_ANDROID && !CHS
 			PlayGameServices.loadScoresForLeaderboard(instance.leaderboardInfos[(int)leaderboard].leaderboardId, TimeScope2GPGLeaderboardTimeScope(timeScope), false, false);
 			#endif
@@ -400,7 +400,7 @@ namespace SweatyChair
 				Debug.LogFormat("LeaderboardManager:Report({0},{1})", leaderboard, score);
 
 			#if UNITY_IOS || UNITY_TVOS
-			GameCenterBinding.reportScore(score, s_Instance.leaderboardInfos[leaderboardIndex].leaderboardId);
+			GameCenterBinding.reportScore(score, instance.leaderboardInfos[leaderboardIndex].leaderboardId);
 			#elif UNITY_ANDROID && !CHS
 			if (PlayGameCenterManager.isAuthenticated)
 				PlayGameServices.submitScore(instance.leaderboardInfos[leaderboardIndex].leaderboardId, score);
@@ -453,7 +453,7 @@ namespace SweatyChair
 		private static Leaderboard GetLeaderboard(GameCenterScore gScore)
 		{
 			for (int i = 0, imax = EnumUtils.GetCount<Leaderboard>(); i < imax; i++) {
-				if (gScore.category == s_Instance.leaderboardInfos[i].leaderboardId)
+				if (gScore.category == instance.leaderboardInfos[i].leaderboardId)
 					return (Leaderboard)i;
 			}
 			return (Leaderboard)0;
