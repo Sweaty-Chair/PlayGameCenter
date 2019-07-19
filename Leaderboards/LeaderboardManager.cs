@@ -1,14 +1,8 @@
 ﻿using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SocialPlatforms;
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using Prime31;
-
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace SweatyChair
 {
@@ -16,10 +10,9 @@ namespace SweatyChair
 	public class LeaderboardManager : Singleton<LeaderboardManager>
 	{
 
-		#if UNITY_ANDROID
-		// + Leaderboard, e.g. PlayGameCenterCachedHighScoreDistance, PlayGameCenterCachedHighScoreHeight
-		private const string PREF_CACHED_HIGH_SCORE = "LeaderboardManagerCachedHighScore";
-		#endif
+#if UNITY_ANDROID
+		private const string PREF_CACHED_HIGH_SCORE = "LeaderboardManagerCachedHighScore"; // + Leaderboard, e.g. PlayGameCenterCachedHighScoreDistance, PlayGameCenterCachedHighScoreHeight
+#endif
 
 		// PlayerPrefs Keys
 		private const string PREF_CURRENT_TIME_SCOPE = "CurrentTimeScope";
@@ -29,35 +22,35 @@ namespace SweatyChair
 		private const string PREF_TOP_SCORES = "TopScores";
 
 		// Events
-		public static event UnityAction<bool> uiToggledEvent;
-		public static event UnityAction<Leaderboard, long> myScoreLoadedEvent;
-		public static event UnityAction<Leaderboard, TimeScope, List<LeaderboardEntry>> topScoresLoadedEvent;
-		public static event UnityAction<Leaderboard, long> highscoreObtainedEvent;
-		public static event UnityAction<Leaderboard> topScoresChangedEvent;
+		public static event UnityAction<bool> uiToggled;
+		public static event UnityAction<Leaderboard, long> myScoreLoaded;
+		public static event UnityAction<Leaderboard, TimeScope, List<LeaderboardEntry>> topScoresLoaded;
+		public static event UnityAction<Leaderboard, long> highscoreObtained;
+		public static event UnityAction<Leaderboard> topScoresChanged;
 
 		public static TimeScope currentTimeScope = TimeScope.AllTime;
 
 		public LeaderboardInfo[] leaderboardInfos;
 
 		// Toogle to determine having in-game scores
-		public bool hasInGameLeaderboards = false;
+		public bool hasInGameLeaderboards;
 		// Toogle to load top scores and fire the result with topScoresLoadedEvent
-		public bool shouldLoadTopScores = false;
+		public bool shouldLoadTopScores ;
 		// Number top scores to download
 		public int loadTopScoreCount = 10;
 		// Toggle to load my scores and fire the result with myScoreLoadedEvent
-		public bool shouldLoadMyScores = false;
+		public bool shouldLoadMyScores;
 
-		public bool debugMode = false;
-	
+		public bool debugMode;
+
 		// Current loaded leaderboard-timescope pair, timescopes are loaded on sequence for each leaderboard, e.g. DefaultLeaderboard-AllTime, then DefaultLeaderboard-Week, then DefaultLeaderboard-Daily
 		private static Dictionary<Leaderboard, TimeScope> _topScoresLoadedTimeScopeDict = new Dictionary<Leaderboard, TimeScope>();
 		// Current loaded leaderboard-boolean pair, leaderboards are loaded on sequence for my scores, e.g. DefaultLeaderboard, SecondLeaderboard, etc.
 		private static Dictionary<Leaderboard, bool> _isMyScoreLoadedDict = new Dictionary<Leaderboard, bool>();
-	
+
 		// The all-time leaderboard score entry, for different leaderboard names
 		private static LeaderboardEntry[] _myLeaderboardEntries = new LeaderboardEntry[0];
-	
+
 		// LeaderboardEntry lists by leaderboard
 		private static Dictionary<Leaderboard, List<LeaderboardEntry>> _topScoresAllTimeDict = new Dictionary<Leaderboard, List<LeaderboardEntry>>();
 		private static Dictionary<Leaderboard, List<LeaderboardEntry>> _topScoresWeekDict = new Dictionary<Leaderboard, List<LeaderboardEntry>>();
@@ -118,7 +111,7 @@ namespace SweatyChair
 				return;
 
 			// Init all arrays, lists and dictionaries here
-			_myLeaderboardEntries = new LeaderboardEntry [EnumUtils.GetCount<Leaderboard>()];
+			_myLeaderboardEntries = new LeaderboardEntry[EnumUtils.GetCount<Leaderboard>()];
 			for (int i = 0, imax = EnumUtils.GetCount<Leaderboard>(); i < imax; i++) {
 				_topScoresAllTimeDict.Add((Leaderboard)i, new List<LeaderboardEntry>());
 				_topScoresWeekDict.Add((Leaderboard)i, new List<LeaderboardEntry>());
@@ -138,13 +131,13 @@ namespace SweatyChair
 					_topScoresLoadedTimeScopeDict.Add((Leaderboard)i, TimeScope.AllTime);
 			}
 
-			#if UNITY_IOS || UNITY_TVOS
+#if UNITY_IOS || UNITY_TVOS
 			GameCenterManager.scoresLoadedEvent += OnTopScoresLoaded;
 			GameCenterManager.scoresForPlayerIdsLoadedEvent += OnMyScoreLoaded;
-			#elif UNITY_ANDROID && !CHS
+#elif UNITY_ANDROID && !CHS
 			GPGManager.loadScoresSucceededEvent += OnTopScoresLoaded;
 			GPGManager.loadCurrentPlayerLeaderboardScoreSucceededEvent += OnMyScoreLoaded;
-			#endif
+#endif
 
 			PlayGameCenterManager.authenticationSucceededEvent += CheckshouldLoadTopScores;
 		}
@@ -155,23 +148,23 @@ namespace SweatyChair
 		{
 			if (shouldLoadMyScores) {
 				foreach (LeaderboardInfo li in leaderboardInfos) {
-					#if UNITY_IOS || UNITY_TVOS
+#if UNITY_IOS || UNITY_TVOS
 					GameCenterBinding.retrieveScoresForPlayerIds(new string[1]{ GameCenterBinding.playerIdentifier() }, li.leaderboardId);
-					#elif UNITY_ANDROID && !CHS
+#elif UNITY_ANDROID && !CHS
 					PlayGameServices.loadCurrentPlayerLeaderboardScore(li.leaderboardId, GPGLeaderboardTimeScope.AllTime, false);
-					#endif
+#endif
 				}
 			}
 
-			#if UNITY_ANDROID
+#if UNITY_ANDROID
 			CheckOfflineHighScores();
-			#endif
+#endif
 
 			if (shouldLoadTopScores)
 				DownloadAllLeaderboardTopScores(TimeScope.AllTime);
 		}
 
-		#if UNITY_IOS || UNITY_TVOS
+#if UNITY_IOS || UNITY_TVOS
 
 		private void OnTopScoresLoaded(GameCenterRetrieveScoresResult retrieveScoresResult)
 		{
@@ -186,7 +179,7 @@ namespace SweatyChair
 			ProcessTopScores(GetLeaderboard(retrieveScoresResult.scores[0]), GetLeaderboardEntryList(retrieveScoresResult.scores));
 		}
 
-		#elif UNITY_ANDROID && !CHS
+#elif UNITY_ANDROID && !CHS
 		
 		private void OnTopScoresLoaded(List<GPGScore> scores)
 		{
@@ -201,7 +194,7 @@ namespace SweatyChair
 			ProcessTopScores(GetLeaderboard(scores[0]), GetLeaderboardEntryList(scores));
 		}
 
-		#endif
+#endif
 
 		private void ProcessTopScores(Leaderboard leaderboard, List<LeaderboardEntry> scores)
 		{
@@ -219,15 +212,14 @@ namespace SweatyChair
 
 			SetTopScores(leaderboard, _topScoresLoadedTimeScopeDict[leaderboard], scores);
 
-			if (topScoresLoadedEvent != null)
-				topScoresLoadedEvent(leaderboard, _topScoresLoadedTimeScopeDict[leaderboard], scores);
+			topScoresLoaded?.Invoke(leaderboard, _topScoresLoadedTimeScopeDict[leaderboard], scores);
 		}
 
 		#endregion
 
 		#region Leaderboard my score loaded callbacks
 
-		#if UNITY_IOS || UNITY_TVOS
+#if UNITY_IOS || UNITY_TVOS
 
 		private void OnMyScoreLoaded(GameCenterRetrieveScoresResult retrieveScoresResult)
 		{
@@ -251,7 +243,7 @@ namespace SweatyChair
 			}
 		}
 
-		#elif UNITY_ANDROID && !CHS
+#elif UNITY_ANDROID && !CHS
 		
 		private void OnMyScoreLoaded(GPGScore score)
 		{
@@ -269,15 +261,14 @@ namespace SweatyChair
 			ProcessMyLoadedScore(l, score.value);
 		}
 
-		#endif
+#endif
 
 		private void ProcessMyLoadedScore(Leaderboard leaderboard, long score)
 		{
 			// Replace local score entry with the online one ONLY when online score is higher
 			if (GetMyLeaderboardScore(leaderboard) < score)
 				SetMyLeaderboardScore(leaderboard, score);
-			if (myScoreLoadedEvent != null)
-				myScoreLoadedEvent(leaderboard, score);
+			myScoreLoaded?.Invoke(leaderboard, score);
 		}
 
 		#endregion
@@ -295,22 +286,22 @@ namespace SweatyChair
 				return;
 			if (!PlayGameCenterManager.isAuthenticated)
 				PlayGameCenterManager.TryAuthentication(true);
-			#if UNITY_IOS || UNITY_TVOS
+#if UNITY_IOS || UNITY_TVOS
 			GameCenterBinding.showLeaderboardWithTimeScopeAndLeaderboard(TimeScope2GameCenterLeaderboardTimeScope(timeScope), instance.leaderboardInfos[(int)leaderboard].leaderboardId);
-			#elif UNITY_ANDROID && !CHS
+#elif UNITY_ANDROID && !CHS
 			PlayGameServices.showLeaderboard(instance.leaderboardInfos[(int)leaderboard].leaderboardId);
-			#endif
+#endif
 		}
 
 		public static void ShowPlayGameCenterLeaderboards()
 		{
 			if (!PlayGameCenterManager.isAuthenticated)
 				PlayGameCenterManager.TryAuthentication(true);
-			#if UNITY_IOS || UNITY_TVOS
+#if UNITY_IOS || UNITY_TVOS
 			GameCenterBinding.showLeaderboardWithTimeScope(GameCenterLeaderboardTimeScope.AllTime);
-			#elif UNITY_ANDROID && !CHS
+#elif UNITY_ANDROID && !CHS
 			PlayGameServices.showLeaderboards();
-			#endif
+#endif
 		}
 
 		#endregion
@@ -330,15 +321,15 @@ namespace SweatyChair
 		{
 			if (!instanceExists)
 				return;
-			
+
 			if (instance.debugMode)
 				Debug.LogFormat("LeaderboardManager:DownloadLeaderboardTopScores({0},{1})", leaderboard, timeScope);
 
-			#if UNITY_IOS || UNITY_TVOS
+#if UNITY_IOS || UNITY_TVOS
 			GameCenterBinding.retrieveScores(false, TimeScope2GameCenterLeaderboardTimeScope(timeScope), 1, instance.loadTopScoreCount, instance.leaderboardInfos[(int)leaderboard].leaderboardId);
-			#elif UNITY_ANDROID && !CHS
+#elif UNITY_ANDROID && !CHS
 			PlayGameServices.loadScoresForLeaderboard(instance.leaderboardInfos[(int)leaderboard].leaderboardId, TimeScope2GPGLeaderboardTimeScope(timeScope), false, false);
-			#endif
+#endif
 		}
 
 		public static void Report(int score)
@@ -388,7 +379,7 @@ namespace SweatyChair
 		{
 			if (!instanceExists)
 				return;
-			
+
 			int leaderboardIndex = (int)leaderboard;
 
 			if (leaderboardIndex >= instance.leaderboardInfos.Length) {
@@ -399,18 +390,18 @@ namespace SweatyChair
 			if (instance.debugMode)
 				Debug.LogFormat("LeaderboardManager:Report({0},{1})", leaderboard, score);
 
-			#if UNITY_IOS || UNITY_TVOS
+#if UNITY_IOS || UNITY_TVOS
 			GameCenterBinding.reportScore(score, instance.leaderboardInfos[leaderboardIndex].leaderboardId);
-			#elif UNITY_ANDROID && !CHS
+#elif UNITY_ANDROID && !CHS
 			if (PlayGameCenterManager.isAuthenticated)
 				PlayGameServices.submitScore(instance.leaderboardInfos[leaderboardIndex].leaderboardId, score);
 			else
 				SetCachedHighScore(leaderboard, score);
-			#endif
+#endif
 		}
 
 		// Game Center take care of offline score and achievements automatically, Play Games sucks and need to take care of with cache
-		#if UNITY_ANDROID
+#if UNITY_ANDROID
 		
 		private static long GetCachedHighScore(Leaderboard leaderboard)
 		{
@@ -437,13 +428,13 @@ namespace SweatyChair
 			}
 		}
 
-		#endif
+#endif
 
 		#endregion
 
 		#region Type Convention
 
-		#if UNITY_IOS || UNITY_TVOS
+#if UNITY_IOS || UNITY_TVOS
 
 		private static GameCenterLeaderboardTimeScope TimeScope2GameCenterLeaderboardTimeScope(TimeScope timeScope)
 		{
@@ -467,7 +458,7 @@ namespace SweatyChair
 			return tmp;
 		}
 
-		#elif UNITY_ANDROID && !CHS
+#elif UNITY_ANDROID && !CHS
 		
 		private static GPGLeaderboardTimeScope TimeScope2GPGLeaderboardTimeScope(TimeScope timeScope)
 		{
@@ -491,7 +482,7 @@ namespace SweatyChair
 			return tmp;
 		}
 
-		#endif
+#endif
 
 		#endregion
 
@@ -505,14 +496,13 @@ namespace SweatyChair
 
 		private static void OnTopScoresChange(Leaderboard leaderboard, TimeScope timeScope)
 		{
-			if (topScoresChangedEvent != null && timeScope == currentTimeScope)
-				topScoresChangedEvent(leaderboard);
+			if (timeScope == currentTimeScope)
+				topScoresChanged?.Invoke(leaderboard);
 		}
 
 		private static void OnHighscoreObtain(long score)
 		{
-			if (highscoreObtainedEvent != null)
-				highscoreObtainedEvent(currentLeaderboard, score);
+			highscoreObtained?.Invoke(currentLeaderboard, score);
 		}
 
 		#endregion
@@ -629,7 +619,7 @@ namespace SweatyChair
 			return PlayerPrefs.GetString(PREF_TOP_SCORES + leaderboard + timeScope + index).Split('|');
 		}
 
-		private static readonly string[] PRESET_SCORES_NAME = new string [] {
+		private static readonly string[] PRESET_SCORES_NAME = new string[] {
 			"Isaac Newton",
 			"Sweaty Chair",
 			"Bill Gates",
@@ -641,7 +631,7 @@ namespace SweatyChair
 			"Lady Gaga",
 			"Justin Bieber"
 		};
-		private static readonly int[] PRESET_SCORES_SCORES = new int [] {
+		private static readonly int[] PRESET_SCORES_SCORES = new int[] {
 			3000,
 			2600,
 			2200,
@@ -678,7 +668,7 @@ namespace SweatyChair
 					break;
 			}
 
-			string[] rawData = new string [3];
+			string[] rawData = new string[3];
 			for (int i = 0, imax = PRESET_SCORES_NAME.Length; i < imax; i++) {
 				rawData[0] = PRESET_SCORES_NAME[i];
 				rawData[1] = "" + (i + 1);
@@ -717,7 +707,7 @@ namespace SweatyChair
 
 			for (int i = 0, imax = LeaderboardManager.numLoadedTopScores; i < imax; i++) {
 				if (i >= loadTopScoreCount) // This only happens in new leaderboard having not enough top scores
-				break;
+					break;
 				PlayerPrefs.SetString(PREF_TOP_SCORES + leaderboard + timeScope + i, topScores[i].prefData);
 			}
 
@@ -782,7 +772,7 @@ namespace SweatyChair
 
 			bool topScoresChanged = myRank <= loadTopScoreCount;
 			if (topScoresChanged) // Update my rank row first
-			topScores[myRank - 1] = new LeaderboardEntry(GetMyLeaderboardEntry(leaderboard), myRank);
+				topScores[myRank - 1] = new LeaderboardEntry(GetMyLeaderboardEntry(leaderboard), myRank);
 
 			for (int i = Mathf.Min(loadTopScoreCount, myRank - 1) - 1; i >= 0; i--) { // From either my upper rank, or top scores bottom, check toward top
 
@@ -817,13 +807,12 @@ namespace SweatyChair
 
 		public static void ToggleUI(bool isShown = true)
 		{
-			if (uiToggledEvent != null)
-				uiToggledEvent(isShown);
+			uiToggled?.Invoke(isShown);
 		}
 
-		#if UNITY_EDITOR
+#if UNITY_EDITOR
 
-		[MenuItem("Debug/Leaderboards/Delete All My Scores", false, 600)]
+		[UnityEditor.MenuItem("Debug/Leaderboards/Delete All My Scores", false, 600)]
 		private static void DeleteMyLeaderboardScore()
 		{
 			for (int i = 0, imax = EnumUtils.GetCount<Leaderboard>(); i < imax; i++)
@@ -832,7 +821,7 @@ namespace SweatyChair
 				ReadMyLeaderboardScores();
 		}
 
-		[MenuItem("Debug/Leaderboards/Delete All Top Scores")]
+		[UnityEditor.MenuItem("Debug/Leaderboards/Delete All Top Scores")]
 		private static void DeleteAllTopScores()
 		{
 			for (int i = 0, imax = EnumUtils.GetCount<Leaderboard>(); i < imax; i++) { // For each leaderboard name
@@ -844,7 +833,7 @@ namespace SweatyChair
 			}
 		}
 
-		[MenuItem("Debug/Leaderboards/Print All My Leaderboard Scores")]
+		[UnityEditor.MenuItem("Debug/Leaderboards/Print All My Leaderboard Scores")]
 		private static void PrintAllMyLeaderboardScores()
 		{
 			for (int i = 0, imax = EnumUtils.GetCount<Leaderboard>(); i < imax; i++) {
@@ -856,7 +845,7 @@ namespace SweatyChair
 			}
 		}
 
-		[MenuItem("Debug/Leaderboards/Print All Top Scores")]
+		[UnityEditor.MenuItem("Debug/Leaderboards/Print All Top Scores")]
 		private static void PrintAllTopScores()
 		{
 			for (int i = 0, imax = EnumUtils.GetCount<Leaderboard>(); i < imax; i++)
@@ -867,13 +856,13 @@ namespace SweatyChair
 		{
 			if (Application.isPlaying) {
 				Debug.LogFormat("All Time top scores of {0}:", leaderboard);
-				foreach (LeaderboardEntry le in GetTopScores (leaderboard, TimeScope.AllTime))
+				foreach (LeaderboardEntry le in GetTopScores(leaderboard, TimeScope.AllTime))
 					Debug.Log(le);
 				Debug.LogFormat("Week top scores of {0}:", leaderboard);
-				foreach (LeaderboardEntry le in GetTopScores (leaderboard, TimeScope.Week))
+				foreach (LeaderboardEntry le in GetTopScores(leaderboard, TimeScope.Week))
 					Debug.Log(le);
 				Debug.LogFormat("Today top scores of {0}:", leaderboard);
-				foreach (LeaderboardEntry le in GetTopScores (leaderboard, TimeScope.Today))
+				foreach (LeaderboardEntry le in GetTopScores(leaderboard, TimeScope.Today))
 					Debug.Log(le);
 			} else {
 				Debug.LogFormat("All Time top scores of {0}:", leaderboard);
@@ -888,7 +877,7 @@ namespace SweatyChair
 			}
 		}
 
-		[MenuItem("Debug/Leaderboards/Print Parameters", false, 601)]
+		[UnityEditor.MenuItem("Debug/Leaderboards/Print Parameters", false, 601)]
 		private static void PrintParameters()
 		{
 			if (Application.isPlaying)
@@ -898,7 +887,7 @@ namespace SweatyChair
 			DebugUtils.LogEach(instance.leaderboardInfos, "leaderboardInfos");
 		}
 
-		#endif
+#endif
 
 	}
 
